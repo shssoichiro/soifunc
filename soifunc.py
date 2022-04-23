@@ -26,6 +26,7 @@ def GoodResize(clip: vs.VideoNode, width: int, height: int) -> vs.VideoNode:
                     width,
                     height,
                     kernel="Lanczos",
+                    smooth=0.5,
                     dither_type="error_diffusion",
                 )
                 planes[0] = vsutil.depth(planes[0], clip.format.bits_per_sample)
