@@ -14,7 +14,7 @@ def GoodResize(clip: vs.VideoNode, width: int, height: int) -> vs.VideoNode:
     if clip.width == width and clip.height == height:
         return clip
     planes: List[vs.VideoNode] = vsutil.split(clip)
-    upscale = width >= clip.width and height >= clip.height
+    upscale = width >= clip.width or height >= clip.height
 
     for i in range(len(planes)):
         if i == 0:
