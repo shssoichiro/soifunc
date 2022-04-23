@@ -50,7 +50,7 @@ def BM3DCPU(
     input,
     **kwargs,
 ):
-    BM3DFast(input, algorithm="bm3dcpu", **kwargs)
+    return BM3DFast(input, algorithm="bm3dcpu", **kwargs)
 
 
 # BM3D wrapper, similar to mvsfunc, but using `bm3dcuda`.
@@ -61,7 +61,7 @@ def BM3DCuda(
     input,
     **kwargs,
 ):
-    BM3DFast(input, algorithm="bm3dcuda", **kwargs)
+    return BM3DFast(input, algorithm="bm3dcuda", **kwargs)
 
 
 # BM3D wrapper, similar to mvsfunc, but using `bm3dcuda_rtc`.
@@ -72,7 +72,7 @@ def BM3DCuda_RTC(
     input,
     **kwargs,
 ):
-    BM3DFast(input, algorithm="bm3dcuda_rtc", **kwargs)
+    return BM3DFast(input, algorithm="bm3dcuda_rtc", **kwargs)
 
 
 # Generic BM3DCUDA wrapper. Modified from the mvsfunc wrapper, with the arguments
