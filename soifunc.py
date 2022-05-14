@@ -5,6 +5,8 @@ import vapoursynth as vs
 
 core = vs.core
 
+import debandshit
+import kagefunc
 import muvsfunc
 import mvsfunc
 import vsutil
@@ -41,6 +43,25 @@ def GoodResize(clip: vs.VideoNode, width: int, height: int) -> vs.VideoNode:
         return planes[0]
 
     return vsutil.join(planes, clip.format.color_family)
+
+
+# "medium" `threshold` in f3kdb is 48. I think that's a bit strong.
+# 16 might be a more sane starting point. Increase as needed.
+def RetinexDeband(clip: vs.VideoNode, threshold: int) -> vs.VideoNode:
+    depth = clip.format.bits_per_sample
+    if depth > 16:
+        raise mvsfunc.value_error(
+            "RetinexDeband currenly only supports 8-to-16-bit integer formats."
+        )
+    shift = 16 - depth
+    mask = (
+        kagefunc.retinex_edgemask(clip)
+        .std.Expr("x {} > x 0 ?", 3000 >> shift)
+        .std.Inflate()
+    )
+    deband = debandshit.dumb3kdb(clip, threshold=threshold, grain=0, use_neo=True)
+    clip = core.std.MaskedMerge(deband, clip, mask)
+    return clip
 
 
 # BM3D wrapper, similar to mvsfunc, but using `bm3dcpu` which is about 50% faster.
