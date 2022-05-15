@@ -56,7 +56,7 @@ def RetinexDeband(clip: vs.VideoNode, threshold: int) -> vs.VideoNode:
     shift = 16 - depth
     mask = (
         kagefunc.retinex_edgemask(clip)
-        .std.Expr("x {3000 >> shift} > x 0 ?")
+        .std.Expr(f"x {3000 >> shift} > x 0 ?")
         .std.Inflate()
     )
     deband = debandshit.dumb3kdb(clip, threshold=threshold, grain=0, use_neo=True)
