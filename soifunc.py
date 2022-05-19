@@ -144,6 +144,7 @@ def BM3DFast(
         raise mvsfunc.value_error(
             "algorithm must be a library from https://github.com/WolframRhodium/VapourSynth-BM3DCUDA"
         )
+    alg_namespace = getattr(core, algorithm)
 
     # input clip
     clip = input
@@ -459,7 +460,7 @@ def BM3DFast(
     elif radius1 < 1:
         # Apply BM3D basic estimate
         # Optional pre-filtered clip for block-matching can be specified by "pre"
-        flt = core.bm3dcpu.BM3D(
+        flt = alg_namespace.BM3D(
             clip,
             ref=pre,
             sigma=sigma,
@@ -469,7 +470,7 @@ def BM3DFast(
     else:
         # Apply V-BM3D basic estimate
         # Optional pre-filtered clip for block-matching can be specified by "pre"
-        flt = core.bm3dcpu.BM3D(
+        flt = alg_namespace.BM3D(
             clip,
             ref=pre,
             sigma=sigma,
@@ -489,7 +490,7 @@ def BM3DFast(
             flt = clip
         elif radius2 < 1:
             # Apply BM3D final estimate
-            flt = core.bm3dcpu.BM3D(
+            flt = alg_namespace.BM3D(
                 clip,
                 ref=flt,
                 sigma=sigma,
@@ -498,7 +499,7 @@ def BM3DFast(
             )
         else:
             # Apply V-BM3D final estimate
-            flt = core.bm3dcpu.BM3D(
+            flt = alg_namespace.BM3D(
                 clip,
                 ref=flt,
                 sigma=sigma,
