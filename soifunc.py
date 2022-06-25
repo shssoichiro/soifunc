@@ -10,6 +10,7 @@ import kagefunc
 import muvsfunc
 import mvsfunc
 import vsutil
+from nnedi3_resample import nnedi3_resample
 
 
 def GoodResize(clip: vs.VideoNode, width: int, height: int) -> vs.VideoNode:
@@ -21,7 +22,9 @@ def GoodResize(clip: vs.VideoNode, width: int, height: int) -> vs.VideoNode:
     for i in range(len(planes)):
         if i == 0:
             if upscale:
-                planes[0] = planes[0].jinc.JincResize(width, height)
+                planes[0] = nnedi3_resample(
+                    planes[0], width, height, mode="znedi3", nsize=4, nns=4
+                )
             else:
                 planes[0] = muvsfunc.SSIM_downsample(
                     planes[0],
