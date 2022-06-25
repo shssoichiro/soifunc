@@ -50,7 +50,9 @@ def GoodResize(clip: vs.VideoNode, width: int, height: int) -> vs.VideoNode:
 
 # "medium" `threshold` in f3kdb is 48. I think that's a bit strong.
 # 16 might be a more sane starting point. Increase as needed.
-def RetinexDeband(clip: vs.VideoNode, threshold: int) -> vs.VideoNode:
+def RetinexDeband(
+    clip: vs.VideoNode, threshold: int, showmask: bool = False
+) -> vs.VideoNode:
     depth = clip.format.bits_per_sample
     if depth > 16:
         raise mvsfunc.value_error(
@@ -62,6 +64,8 @@ def RetinexDeband(clip: vs.VideoNode, threshold: int) -> vs.VideoNode:
         .std.Expr(f"x {3000 >> shift} > x 0 ?")
         .std.Inflate()
     )
+    if showmask:
+        return mask
     deband = debandshit.dumb3kdb(clip, threshold=threshold, grain=0, use_neo=True)
     clip = core.std.MaskedMerge(deband, clip, mask)
     return clip
