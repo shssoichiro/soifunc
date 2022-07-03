@@ -67,8 +67,7 @@ def RetinexDeband(
     if showmask:
         return mask
     deband = debandshit.dumb3kdb(clip, threshold=threshold, grain=0, use_neo=True)
-    clip = core.std.MaskedMerge(deband, clip, mask)
-    return clip
+    return core.std.MaskedMerge(deband, clip, mask)
 
 
 # Compression introduces rounding errors and whatnot that can lead
