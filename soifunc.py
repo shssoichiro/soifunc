@@ -1,4 +1,4 @@
-__all__ = ["GoodResize"]
+__all__ = ["GoodResize", "RetinexDeband", "ClipLimited", "BM3DCPU", "BM3DCuda", "BM3DCuda_RTC", "BM3DFast"]
 
 from typing import List
 import vapoursynth as vs
