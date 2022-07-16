@@ -69,7 +69,7 @@ See [BM3DCUDA](https://github.com/WolframRhodium/VapourSynth-BM3DCUDA) for list 
 
 `clip = soifunc.BM3DCuda(clip, ...args)`
 
-`clip = soifunc.BM3DCuda_RTCclip, ...args)`
+`clip = soifunc.BM3DCuda_RTC(clip, ...args)`
 
 Provides wrappers around the accelerated BM3D functions in BM3DCUDA, similar to the wrapper provided for the base BM3D plugin in mvsfunc.
 These functions perform all necessary colorspace conversion, so they are considerably simpler to use than manually calling BM3DCuda.
