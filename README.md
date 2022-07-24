@@ -37,6 +37,8 @@ For downscaling, luma is resized using `SSIM_downsample`.
 
 Chroma is always resized using `Spline36`.
 
+**If this plugin causes your video to produce a blank output**, see this issue: https://github.com/HomeOfVapourSynthEvolution/VapourSynth-TCanny/issues/14
+
 #### RetinexDeband
 
 `clip = soifunc.RetinexDeband(clip, threshold = 16 [, showmask = False])`
