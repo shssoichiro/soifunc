@@ -53,15 +53,11 @@ def GoodResize(clip: vs.VideoNode, width: int, height: int) -> vs.VideoNode:
 def RetinexDeband(
     clip: vs.VideoNode, threshold: int, showmask: bool = False
 ) -> vs.VideoNode:
-    depth = clip.format.bits_per_sample
-    if depth > 16:
-        raise mvsfunc.value_error(
-            "RetinexDeband currenly only supports 8-to-16-bit integer formats."
-        )
-    shift = 16 - depth
+    if clip.format.bits_per_sample != 16:
+        clip = vsutil.depth(clip, 16)
     mask = (
         kagefunc.retinex_edgemask(clip)
-        .std.Expr(f"x {3000 >> shift} > x 0 ?")
+        .std.Expr(f"x 3000 > x 0 ?")
         .std.Inflate()
     )
     if showmask:
