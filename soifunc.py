@@ -87,9 +87,11 @@ def RetinexDeband(
         or clip.format.bits_per_sample > 16
     ):
         raise value_error("currenly only supports 8-16 bit integer YUV input")
-    threshold = 3000 >> (16 - clip.format.bits_per_sample)
+    mask_threshold = 3000 >> (16 - clip.format.bits_per_sample)
     mask = (
-        kagefunc.retinex_edgemask(clip).std.Expr(f"x {threshold} > x 0 ?").std.Inflate()
+        kagefunc.retinex_edgemask(clip)
+        .std.Expr(f"x {mask_threshold} > x 0 ?")
+        .std.Inflate()
     )
     if showmask:
         return mask
