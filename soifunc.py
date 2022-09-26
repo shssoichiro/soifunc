@@ -1,4 +1,12 @@
-__all__ = ["GoodResize", "RetinexDeband", "ClipLimited", "BM3DCPU", "BM3DCuda", "BM3DCuda_RTC", "BM3DFast"]
+__all__ = [
+    "GoodResize",
+    "RetinexDeband",
+    "ClipLimited",
+    "BM3DCPU",
+    "BM3DCuda",
+    "BM3DCuda_RTC",
+    "BM3DFast",
+]
 
 from typing import List
 import vapoursynth as vs
@@ -53,12 +61,17 @@ def GoodResize(clip: vs.VideoNode, width: int, height: int) -> vs.VideoNode:
 def RetinexDeband(
     clip: vs.VideoNode, threshold: int, showmask: bool = False
 ) -> vs.VideoNode:
-    if clip.format.bits_per_sample != 16:
-        clip = vsutil.depth(clip, 16)
+    if (
+        clip.format.color_family != vs.YUV
+        or clip.format.sample_type != vs.INTEGER
+        or clip.format.bits_per_sample > 16
+    ):
+        raise mvsfunc.value_error(
+            "RetinexDeband currenly only supports 8-16 bit integer YUV input"
+        )
+    threshold = 3000 >> (16 - clip.format.bits_per_sample)
     mask = (
-        kagefunc.retinex_edgemask(clip)
-        .std.Expr(f"x 3000 > x 0 ?")
-        .std.Inflate()
+        kagefunc.retinex_edgemask(clip).std.Expr(f"x {threshold} > x 0 ?").std.Inflate()
     )
     if showmask:
         return mask

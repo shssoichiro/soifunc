@@ -49,8 +49,6 @@ High quality debanding using a retinex mask, designed to preserve details in bot
 
 `showmask` is an optional debugging parameter, setting this to `True` will output the mask that will be used to preserve edges.
 
-This function will always return a clip with a 16 bit depth, it will convert to this if necessary.
-
 Note that this debander does not automatically add grain.
 If you need to add grain before encoding, use `kagefunc.adaptive_grain`.
 If you're using AV1 grain synthesis, you _do not_ need to add grain before encoding.
