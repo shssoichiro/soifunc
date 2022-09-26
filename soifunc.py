@@ -20,7 +20,27 @@ import mvsfunc
 import vsutil
 from nnedi3_resample import nnedi3_resample
 
+# Internal utilities
+def value_error(obj1, *args, num_stacks=1):
+    name = get_func_name(num_stacks + 1)
+    return ValueError(f"[soifunc.{name}] {obj1}", *args)
 
+
+def type_error(obj1, *args, num_stacks=1):
+    name = get_func_name(num_stacks + 1)
+    return TypeError(f"[soifunc.{name}] {obj1}", *args)
+
+
+def get_func_name(num_of_call_stacks=1):
+    import inspect
+
+    frame = inspect.currentframe()
+    for _ in range(num_of_call_stacks):
+        frame = frame.f_back
+    return frame.f_code.co_name
+
+
+# Public functions
 def GoodResize(clip: vs.VideoNode, width: int, height: int) -> vs.VideoNode:
     if clip.width == width and clip.height == height:
         return clip
@@ -66,9 +86,7 @@ def RetinexDeband(
         or clip.format.sample_type != vs.INTEGER
         or clip.format.bits_per_sample > 16
     ):
-        raise mvsfunc.value_error(
-            "RetinexDeband currenly only supports 8-16 bit integer YUV input"
-        )
+        raise value_error("currenly only supports 8-16 bit integer YUV input")
     threshold = 3000 >> (16 - clip.format.bits_per_sample)
     mask = (
         kagefunc.retinex_edgemask(clip).std.Expr(f"x {threshold} > x 0 ?").std.Inflate()
@@ -178,7 +196,7 @@ def BM3DFast(
     if not (
         algorithm == "bm3dcpu" or algorithm == "bm3dcuda" or algorithm == "bm3dcuda_rtc"
     ):
-        raise mvsfunc.value_error(
+        raise value_error(
             "algorithm must be a library from https://github.com/WolframRhodium/VapourSynth-BM3DCUDA"
         )
     alg_namespace = getattr(core, algorithm)
@@ -187,7 +205,7 @@ def BM3DFast(
     clip = input
 
     if not isinstance(input, vs.VideoNode):
-        raise mvsfunc.type_error('"input" must be a clip!')
+        raise type_error('"input" must be a clip!')
 
     # Get string format parameter "matrix"
     matrix = mvsfunc.GetMatrix(input, matrix, True)
@@ -217,7 +235,7 @@ def BM3DFast(
         else:
             fulls = False if sIsYUV or sIsGRAY else True
     elif not isinstance(full, int):
-        raise mvsfunc.type_error('"full" must be a bool!')
+        raise type_error('"full" must be a bool!')
     else:
         fulls = full
 
@@ -225,11 +243,9 @@ def BM3DFast(
     if psample is None:
         psample = vs.FLOAT
     elif not isinstance(psample, int):
-        raise mvsfunc.type_error('"psample" must be an int!')
+        raise type_error('"psample" must be an int!')
     elif psample != vs.INTEGER and psample != vs.FLOAT:
-        raise mvsfunc.value_error(
-            '"psample" must be either 0 (vs.INTEGER) or 1 (vs.FLOAT)!'
-        )
+        raise value_error('"psample" must be either 0 (vs.INTEGER) or 1 (vs.FLOAT)!')
     pbitPS = 16 if psample == vs.INTEGER else 32
     pSType = psample
 
@@ -239,7 +255,7 @@ def BM3DFast(
         dVSubS = sVSubS
         css = f"{dHSubS}{dVSubS}"
     elif not isinstance(css, str):
-        raise mvsfunc.type_error('"css" must be a str!')
+        raise type_error('"css" must be a str!')
     else:
         if css == "444" or css == "4:4:4":
             css = "11"
@@ -272,7 +288,7 @@ def BM3DFast(
             while len(sigma) < 3:
                 sigma.append(sigma[len(sigma) - 1])
         else:
-            raise mvsfunc.type_error("sigma must be a float[] or an int[]!")
+            raise type_error("sigma must be a float[] or an int[]!")
     if sIsGRAY:
         sigma = [sigma[0], 0, 0]
     skip = sigma[0] <= 0 and sigma[1] <= 0 and sigma[2] <= 0
@@ -280,62 +296,58 @@ def BM3DFast(
     if radius1 is None:
         radius1 = 0
     elif not isinstance(radius1, int):
-        raise mvsfunc.type_error('"radius1" must be an int!')
+        raise type_error('"radius1" must be an int!')
     elif radius1 < 0:
-        raise mvsfunc.value_error('valid range of "radius1" is [0, +inf)!')
+        raise value_error('valid range of "radius1" is [0, +inf)!')
     if radius2 is None:
         radius2 = radius1
     elif not isinstance(radius2, int):
-        raise mvsfunc.type_error('"radius2" must be an int!')
+        raise type_error('"radius2" must be an int!')
     elif radius2 < 0:
-        raise mvsfunc.value_error('valid range of "radius2" is [0, +inf)!')
+        raise value_error('valid range of "radius2" is [0, +inf)!')
 
     if profile1 is None:
         profile1 = "fast"
     elif not isinstance(profile1, str):
-        raise mvsfunc.type_error('"profile1" must be a str!')
+        raise type_error('"profile1" must be a str!')
     if profile2 is None:
         profile2 = profile1
     elif not isinstance(profile2, str):
-        raise mvsfunc.type_error('"profile2" must be a str!')
+        raise type_error('"profile2" must be a str!')
 
     if refine is None:
         refine = 1
     elif not isinstance(refine, int):
-        raise mvsfunc.type_error('"refine" must be an int!')
+        raise type_error('"refine" must be an int!')
     elif refine < 0:
-        raise mvsfunc.value_error('valid range of "refine" is [0, +inf)!')
+        raise value_error('valid range of "refine" is [0, +inf)!')
 
     if output is None:
         output = 0
     elif not isinstance(output, int):
-        raise mvsfunc.type_error('"output" must be an int!')
+        raise type_error('"output" must be an int!')
     elif output < 0 or output > 2:
-        raise mvsfunc.value_error('valid values of "output" are 0, 1 and 2!')
+        raise value_error('valid values of "output" are 0, 1 and 2!')
 
     if pre is not None:
         if not isinstance(pre, vs.VideoNode):
-            raise mvsfunc.type_error('"pre" must be a clip!')
+            raise type_error('"pre" must be a clip!')
         if pre.format.id != sFormat.id:
-            raise mvsfunc.value_error(
+            raise value_error(
                 'clip "pre" must be of the same format as the input clip!'
             )
         if pre.width != input.width or pre.height != input.height:
-            raise mvsfunc.value_error(
-                'clip "pre" must be of the same size as the input clip!'
-            )
+            raise value_error('clip "pre" must be of the same size as the input clip!')
 
     if ref is not None:
         if not isinstance(ref, vs.VideoNode):
-            raise mvsfunc.type_error('"ref" must be a clip!')
+            raise type_error('"ref" must be a clip!')
         if ref.format.id != sFormat.id:
-            raise mvsfunc.value_error(
+            raise value_error(
                 'clip "ref" must be of the same format as the input clip!'
             )
         if ref.width != input.width or ref.height != input.height:
-            raise mvsfunc.value_error(
-                'clip "ref" must be of the same size as the input clip!'
-            )
+            raise value_error('clip "ref" must be of the same size as the input clip!')
 
     # Get properties of output clip
     if depth is None:
@@ -344,7 +356,7 @@ def BM3DFast(
         else:
             dbitPS = pbitPS
     elif not isinstance(depth, int):
-        raise mvsfunc.type_error('"depth" must be an int!')
+        raise type_error('"depth" must be an int!')
     else:
         dbitPS = depth
     if sample is None:
@@ -356,11 +368,9 @@ def BM3DFast(
         else:
             dSType = vs.FLOAT if dbitPS >= 32 else vs.INTEGER
     elif not isinstance(sample, int):
-        raise mvsfunc.type_error('"sample" must be an int!')
+        raise type_error('"sample" must be an int!')
     elif sample != vs.INTEGER and sample != vs.FLOAT:
-        raise mvsfunc.value_error(
-            '"sample" must be either 0 (vs.INTEGER) or 1 (vs.FLOAT)!'
-        )
+        raise value_error('"sample" must be either 0 (vs.INTEGER) or 1 (vs.FLOAT)!')
     else:
         dSType = sample
     if depth is None and sSType != vs.FLOAT and sample == vs.FLOAT:
@@ -368,9 +378,9 @@ def BM3DFast(
     elif depth is None and sSType != vs.INTEGER and sample == vs.INTEGER:
         dbitPS = 16
     if dSType == vs.INTEGER and (dbitPS < 1 or dbitPS > 16):
-        raise mvsfunc.value_error(f"{dbitPS}-bit integer output is not supported!")
+        raise value_error(f"{dbitPS}-bit integer output is not supported!")
     if dSType == vs.FLOAT and (dbitPS != 16 and dbitPS != 32):
-        raise mvsfunc.value_error(f"{dbitPS}-bit float output is not supported!")
+        raise value_error(f"{dbitPS}-bit float output is not supported!")
 
     if output == 0:
         fulld = fulls
