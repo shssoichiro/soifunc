@@ -135,6 +135,7 @@ def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
 # ```python
 # import soifunc
 # import dfttest2
+# import functools #functools is built in to python
 # denoiser = functools.partial(dfttest2.DFTTest, sigma=1.5, backend=dfttest2.Backend.CPU)
 # clip = soifunc.MCDenoise(clip, denoiser)
 # ```
