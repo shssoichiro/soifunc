@@ -2,13 +2,14 @@ __all__ = [
     "GoodResize",
     "RetinexDeband",
     "ClipLimited",
+    "MCDenoise",
     "BM3DCPU",
     "BM3DCuda",
     "BM3DCuda_RTC",
     "BM3DFast",
 ]
 
-from typing import List
+from typing import Callable, List, Optional
 import vapoursynth as vs
 
 core = vs.core
@@ -18,6 +19,7 @@ import kagefunc
 import muvsfunc
 import mvsfunc
 import vsutil
+import functools
 from nnedi3_resample import nnedi3_resample
 
 # Internal utilities
@@ -119,6 +121,69 @@ def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
             f"x {min} < {min} x {chroma_max} > {chroma_max} x ? ?",
         ]
     )
+
+
+# Applies motion compensation to a denoised clip to improve detail preservation
+#
+# Params:
+# - `denoiser`: A function defining how to spatially denoise the motion-compensated frames. This should be a *spatial denoiser only*.
+#   Params can be added using `functools.partial`.
+# - `prefilter`: An optional prefiltered input clip to enable better searching for motion vectors
+def MCDenoise(
+    clip: vs.VideoNode,
+    denoiser: Callable[[vs.VideoNode], vs.VideoNode],
+    prefilter: Optional[vs.VideoNode] = None,
+) -> vs.VideoNode:
+    prefilter = prefilter or clip
+    # one level (temporal radius) is enough for MRecalculate
+    super = core.mv.Super(prefilter, hpad=16, vpad=16, levels=1)
+    # all levels for MAnalyse
+    superfilt = core.mv.Super(clip, hpad=16, vpad=16)
+
+    # Generate motion vectors
+    backward2 = core.mv.Analyse(
+        superfilt, isb=True, blksize=16, overlap=8, delta=2, search=3, truemotion=True
+    )
+    backward = core.mv.Analyse(
+        superfilt, isb=True, blksize=16, overlap=8, search=3, truemotion=True
+    )
+    forward = core.mv.Analyse(
+        superfilt, isb=False, blksize=16, overlap=8, search=3, truemotion=True
+    )
+    forward2 = core.mv.Analyse(
+        superfilt, isb=False, blksize=16, overlap=8, delta=2, search=3, truemotion=True
+    )
+
+    # Recalculate for higher consistency / quality
+    backward_re2 = core.mv.Recalculate(
+        super, backward2, blksize=8, overlap=4, search=3, truemotion=True
+    )
+    backward_re = core.mv.Recalculate(
+        super, backward, blksize=8, overlap=4, search=3, truemotion=True
+    )
+    forward_re = core.mv.Recalculate(
+        super, forward, blksize=8, overlap=4, search=3, truemotion=True
+    )
+    forward_re2 = core.mv.Recalculate(
+        super, forward2, blksize=8, overlap=4, search=3, truemotion=True
+    )
+
+    # Pixel-based motion comp
+    # Generate heirarchical frames from motion vector data
+    backward_comp2 = core.mv.Flow(clip, super, backward_re2)
+    backward_comp = core.mv.Flow(clip, super, backward_re)
+    forward_comp = core.mv.Flow(clip, super, forward_re)
+    forward_comp2 = core.mv.Flow(clip, super, forward_re2)
+
+    # Interleave the mocomp'd frames
+    interleave = core.std.Interleave(
+        [forward_comp2, forward_comp, clip, backward_comp, backward_comp2]
+    )
+
+    clip = denoiser(clip=interleave)
+
+    # Every 5 frames, select the 3rd/middle frame (second digit counts from 0)
+    return core.std.SelectEvery(clip, 5, 2)
 
 
 # BM3D wrapper, similar to mvsfunc, but using `bm3dcpu` which is about 50% faster.
