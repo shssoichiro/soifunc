@@ -126,7 +126,7 @@ def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
 # Applies motion compensation to a denoised clip to improve detail preservation
 #
 # Params:
-# - `denoiser`: A function defining how to spatially denoise the motion-compensated frames. This should be a *spatial denoiser only*.
+# - `denoiser`: A function defining how to spatially denoise the motion-compensated frames.
 #   Params can be added using `functools.partial`.
 # - `prefilter`: An optional prefiltered input clip to enable better searching for motion vectors
 def MCDenoise(
