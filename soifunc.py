@@ -123,7 +123,8 @@ def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
     )
 
 
-# Applies motion compensation to a denoised clip to improve detail preservation
+# Applies motion compensation to a denoised clip to improve detail preservation.
+# Credit to Clybius for creating this code.
 #
 # Params:
 # - `denoiser`: A function defining how to spatially denoise the motion-compensated frames.
