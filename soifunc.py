@@ -130,6 +130,14 @@ def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
 # - `denoiser`: A function defining how to denoise the motion-compensated frames.
 #   Params can be added using `functools.partial`.
 # - `prefilter`: An optional prefiltered input clip to enable better searching for motion vectors
+#
+# Example usage:
+# ```python
+# import soifunc
+# import dfttest2
+# denoiser = functools.partial(dfttest2.DFTTest, sigma=1.5, backend=dfttest2.Backend.CPU)
+# clip = soifunc.MCDenoise(clip, denoiser)
+# ```
 def MCDenoise(
     clip: vs.VideoNode,
     denoiser: Callable[[vs.VideoNode], vs.VideoNode],
