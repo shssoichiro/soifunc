@@ -79,3 +79,24 @@ See [BM3DCUDA](https://github.com/WolframRhodium/VapourSynth-BM3DCUDA) for list 
 
 Provides wrappers around the accelerated BM3D functions in BM3DCUDA, similar to the wrapper provided for the base BM3D plugin in mvsfunc.
 These functions perform all necessary colorspace conversion, so they are considerably simpler to use than manually calling BM3DCuda.
+
+#### MCDenoise
+
+Applies motion compensation to a denoised clip to improve detail preservation.
+Credit to Clybius for creating this code.
+
+Example usage:
+
+```python
+import soifunc
+import dfttest2
+import functools    # functools is built in to python
+denoiser = functools.partial(dfttest2.DFTTest, sigma=1.5, backend=dfttest2.Backend.CPU)
+clip = soifunc.MCDenoise(clip, denoiser)
+```
+
+Params:
+- `denoiser`: A function defining how to denoise the motion-compensated frames.
+   Denoiser params can be added using `functools.partial`.
+- `prefilter`: An optional prefiltered input clip to enable better searching for motion vectors
+
