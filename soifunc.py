@@ -14,7 +14,10 @@ import vapoursynth as vs
 
 core = vs.core
 
-import debandshit
+try:
+    import vsdeband
+except ImportError:
+    import debandshit as vsdeband
 import kagefunc
 import muvsfunc
 import mvsfunc
@@ -97,7 +100,7 @@ def RetinexDeband(
     )
     if showmask:
         return mask
-    deband = debandshit.dumb3kdb(clip, threshold=threshold, grain=0, use_neo=True)
+    deband = vsdeband.dumb3kdb(clip, threshold=threshold, grain=0, use_neo=True)
     return core.std.MaskedMerge(deband, clip, mask)
 
 

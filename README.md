@@ -12,7 +12,7 @@ Install from [AUR](https://aur.archlinux.org/packages/vapoursynth-plugin-soifunc
 
 Copy the Python script to your Python site-packages folder. Ensure you have the required prerequisites installed:
 
-- [debandshit](https://github.com/Irrational-Encoding-Wizardry/vs-debandshit)
+- [vsdeband](https://github.com/Irrational-Encoding-Wizardry/vs-deband)
 - [neo_f3kdb](https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb)
 - [kagefunc](https://github.com/Irrational-Encoding-Wizardry/kagefunc)
 - [muvsfunc](https://github.com/WolframRhodium/muvsfunc)
@@ -96,7 +96,7 @@ clip = soifunc.MCDenoise(clip, denoiser)
 ```
 
 Params:
-- `denoiser`: A function defining how to denoise the motion-compensated frames.
-   Denoiser params can be added using `functools.partial`.
-- `prefilter`: An optional prefiltered input clip to enable better searching for motion vectors
 
+- `denoiser`: A function defining how to denoise the motion-compensated frames.
+  Denoiser params can be added using `functools.partial`.
+- `prefilter`: An optional prefiltered input clip to enable better searching for motion vectors
