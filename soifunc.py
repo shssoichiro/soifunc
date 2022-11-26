@@ -14,10 +14,7 @@ import vapoursynth as vs
 
 core = vs.core
 
-try:
-    import vsdeband
-except ImportError:
-    import debandshit as vsdeband
+import vsdeband
 import kagefunc
 import muvsfunc
 import mvsfunc
@@ -100,7 +97,10 @@ def RetinexDeband(
     )
     if showmask:
         return mask
-    deband = vsdeband.dumb3kdb(clip, threshold=threshold, grain=0, use_neo=True)
+    # Upstream changed the name of the filter, the name of the plugin,
+    # the calling convention, and even the name of the params,
+    # for funsies. megaREEEE
+    deband = vsdeband.F3kdb(use_neo=True).deband(clip, thr=threshold, grains=0)
     return core.std.MaskedMerge(deband, clip, mask)
 
 
