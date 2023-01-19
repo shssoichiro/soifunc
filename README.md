@@ -10,9 +10,8 @@ Install from [AUR](https://aur.archlinux.org/packages/vapoursynth-plugin-soifunc
 
 #### Other
 
-Copy the Python script to your Python site-packages folder. Ensure you have the required prerequisites installed:
+First install the required plugins which are not available in pip:
 
-- [vsdeband](https://github.com/Irrational-Encoding-Wizardry/vs-deband)
 - [neo_f3kdb](https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb)
 - [kagefunc](https://github.com/Irrational-Encoding-Wizardry/kagefunc)
 - [muvsfunc](https://github.com/WolframRhodium/muvsfunc)
@@ -20,6 +19,18 @@ Copy the Python script to your Python site-packages folder. Ensure you have the 
 - [znedi3](https://github.com/sekrit-twc/znedi3)
 - [nnedi3_resample](https://github.com/HomeOfVapourSynthEvolution/nnedi3_resample)
 - [BM3DCUDA](https://github.com/WolframRhodium/VapourSynth-BM3DCUDA)
+
+Install from pip:
+
+```bash
+pip install soifunc
+```
+
+Or the latest git version:
+
+```bash
+pip install git+https://github.com/shssoichiro/soifunc.git
+```
 
 ### Usage
 
