@@ -1,3 +1,4 @@
 /dist
 # For libraries it is not necessary to commit the lockfile
 poetry.lock
+/.mypy_cache
