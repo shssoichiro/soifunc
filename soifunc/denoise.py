@@ -43,7 +43,7 @@ def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
 
 def MCDenoise(
     clip: vs.VideoNode,
-    denoiser: Callable[[vs.VideoNode], vs.VideoNode],
+    denoiser: Callable[..., vs.VideoNode],
     prefilter: Optional[vs.VideoNode] = None,
 ) -> vs.VideoNode:
     """

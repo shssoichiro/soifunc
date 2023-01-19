@@ -1,2 +1,0 @@
-VapourSynth>=60
-vsdeband>=0.7.2

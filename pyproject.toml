@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "soifunc"
+version = "0.1.0"
+description = "Soichiro's VapourSynth Functions Collection"
+authors = ["Josh Holmer <jholmer.in@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+vapoursynth = ">=60"
+vsdeband = ">=0.7.2"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.12.0"
+isort = "^5.11.4"
+mypy = "^0.991"
+pre-commit = "^2.21.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
