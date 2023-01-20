@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import muvsfunc
 import vapoursynth as vs
@@ -12,7 +12,13 @@ __all__ = [
 ]
 
 
-def GoodResize(clip: vs.VideoNode, width: int, height: int) -> vs.VideoNode:
+def GoodResize(
+    clip: vs.VideoNode,
+    width: int,
+    height: int,
+    gpu: bool = False,
+    device: Optional[int] = None,
+) -> vs.VideoNode:
     """High quality resizing filter"""
     if clip.width == width and clip.height == height:
         return clip
@@ -23,7 +29,13 @@ def GoodResize(clip: vs.VideoNode, width: int, height: int) -> vs.VideoNode:
         if i == 0:
             if upscale:
                 planes[0] = nnedi3_resample(
-                    planes[0], width, height, mode="znedi3", nsize=4, nns=4
+                    planes[0],
+                    width,
+                    height,
+                    mode="nnedi3cl" if gpu else "znedi3",
+                    nsize=4,
+                    nns=4,
+                    device=device,
                 )
             else:
                 planes[0] = muvsfunc.SSIM_downsample(
