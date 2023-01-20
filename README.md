@@ -51,6 +51,11 @@ Chroma is always resized using `Spline36`.
 
 **If this filter causes your video to produce a blank output**, see this issue: https://github.com/HomeOfVapourSynthEvolution/VapourSynth-TCanny/issues/14
 
+Additional Params:
+
+- `gpu`: Whether to use the OpenCL version of supported dependencies (currently applies to upscaling).
+- `device`: Sets target OpenCL device.
+
 #### RetinexDeband
 
 `clip = soifunc.RetinexDeband(clip, threshold = 16 [, showmask = False])`
@@ -112,3 +117,51 @@ Params:
 - `denoiser`: A function defining how to denoise the motion-compensated frames.
   Denoiser params can be added using `functools.partial`.
 - `prefilter`: An optional prefiltered input clip to enable better searching for motion vectors
+
+#### SQTGMC
+
+This is a modification of the QTGMC function from havsfunc, but simplified.
+QTGMC has 90 args and this causes both its usability and maintainability to suffer.
+This version removes a majority of parameters, either baking them into a preset,
+auto-detecting them based on the video source, or removing their functionality entirely.
+
+The presets are also simplified into "slowest", "slow", "medium", "fast", and "fastest",
+and match/noise presets are no longer separate from the primary preset.
+
+Params:
+
+- `clip`: The input video to apply deinterlacing to
+- `preset`: Speed/quality tradeoff. One of "slowest", "slow", "medium", "fast", and "fastest"
+  Default: "slow"
+- `input_type`: Default = 0 for interlaced input.
+  Settings 1 & 2 accept progressive input for deshimmer or repair.
+  Frame rate of progressive source is not doubled.
+  Mode 1 is for general progressive material.
+  Mode 2 is designed for badly deinterlaced material.
+- `tff`: Since VapourSynth only has a weak notion of field order internally,
+  `tff` may have to be set. Setting `tff` to `True` means top field first
+  and `False` means bottom field first. Note that the `_FieldBased` frame property,
+  if present, takes precedence over `tff`.
+- `fps_divisor`: 1 = Double-rate output, 2 = Single-rate output.
+  Higher values can be used too (e.g. 60 fps & `fps_divisor=3` gives 20 fps output).
+- `prog_sad_mask`: Only applies to `input_type=2`.
+  If `prog_sad_mask` > 0.0 then blend `input_type` modes 1 and 2 based on block motion SAD.
+  Higher values help recover more detail, but repair fewer artifacts.
+  Reasonable range about 2.0 to 20.0, or 0.0 for no blending.
+- `sigma`: Amount of noise known to be in the source,
+  sensible values vary by source and denoiser, so experiment.
+  Use `show_noise` to help.
+- `show_noise`: Display extracted and "deinterlaced" noise rather than normal output.
+  Set to `True` or `False`, or set a value (around 4 to 16) to specify
+  contrast for displayed noise. Visualising noise helps to determine suitable value
+  for `sigma` - want to see noise and noisy detail,
+  but not too much clean structure or edges - fairly subjective.
+- `grain_restore`: How much removed grain to restore before final temporal smooth.
+  Retain "stable" grain and some detail.
+- `noise_restore`: How much removed noise to restore after final temporal smooth.
+  Retains any kind of noise.
+- `border`: Pad a little vertically while processing (doesn't affect output size).
+  Set `True` you see flickering on the very top or bottom line of the
+  output. If you have wider edge effects than that, you should crop afterwards instead.
+- `gpu`: Whether to use the OpenCL version of supported dependencies.
+- `device`: Sets target OpenCL device.
