@@ -99,7 +99,7 @@ def MCDenoise(
     )
 
     # Pixel-based motion comp
-    # Generate heirarchical frames from motion vector data
+    # Generate hierarchical frames from motion vector data
     backward_comp2 = core.mv.Flow(clip, super, backward_re2)
     backward_comp = core.mv.Flow(clip, super, backward_re)
     forward_comp = core.mv.Flow(clip, super, forward_re)
