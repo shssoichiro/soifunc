@@ -14,6 +14,7 @@ __all__ = [
     "BM3DCuda",
     "BM3DCuda_RTC",
     "BM3DFast",
+    "MagicDenoise",
 ]
 
 
@@ -618,3 +619,81 @@ def BM3DFast(
 
     # Output
     return clip
+
+
+# Clybius's magic denoise function.
+#
+# Uses dark magic to denoise heavy grain from videos.
+# Zero parameters, only magic.
+def MagicDenoise(
+    clip: vs.VideoNode,
+    gpu: bool = False,
+):
+    super = core.mv.Super(clip, hpad=16, vpad=16, rfilter=4)
+    superSharp = core.mv.Super(clip, hpad=16, vpad=16, rfilter=4)
+
+    backward2 = core.mv.Analyse(
+        super, isb=True, blksize=16, overlap=8, delta=2, search=3, dct=6
+    )
+    backward = core.mv.Analyse(super, isb=True, blksize=16, overlap=8, search=3, dct=6)
+    forward = core.mv.Analyse(super, isb=False, blksize=16, overlap=8, search=3, dct=6)
+    forward2 = core.mv.Analyse(
+        super, isb=False, blksize=16, overlap=8, delta=2, search=3, dct=6
+    )
+
+    backward2 = core.mv.Recalculate(
+        super, backward2, blksize=8, overlap=4, search=3, divide=2, dct=6
+    )
+    backward = core.mv.Recalculate(
+        super, backward, blksize=8, overlap=4, search=3, divide=2, dct=6
+    )
+    forward = core.mv.Recalculate(
+        super, forward, blksize=8, overlap=4, search=3, divide=2, dct=6
+    )
+    forward2 = core.mv.Recalculate(
+        super, forward2, blksize=8, overlap=4, search=3, divide=2, dct=6
+    )
+
+    backward_re2 = core.mv.Finest(backward2)
+    backward_re = core.mv.Finest(backward)
+    forward_re = core.mv.Finest(forward)
+    forward_re2 = core.mv.Finest(forward2)
+
+    clip = core.mv.Degrain2(
+        clip,
+        superSharp,
+        backward_re,
+        forward_re,
+        backward_re2,
+        forward_re2,
+        thsad=220,
+        thscd1=300,
+    )
+    try:
+        import importlib
+
+        dfttest2 = importlib.import_module("dfttest2")
+    except ModuleNotFoundError:
+        dfttest2 = None
+    if dfttest2 is not None:
+        backend = dfttest2.Backend.NVRTC if gpu else dfttest2.Backend.CPU
+        return dfttest2.DFTTest(
+            clip,
+            slocation=[(0.0, 0.8), (0.06, 1.1), (0.12, 1.0), (1.0, 1.0)],
+            pmax=1000000,
+            pmin=1.25,
+            ftype=4,
+            tbsize=3,
+            ssystem=1,
+            backend=backend,
+        )
+    else:
+        return clip.dfttest.DFTTest(
+            clip,
+            slocation=[(0.0, 0.8), (0.06, 1.1), (0.12, 1.0), (1.0, 1.0)],
+            pmax=1000000,
+            pmin=1.25,
+            ftype=4,
+            tbsize=3,
+            ssystem=1,
+        )

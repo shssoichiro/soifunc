@@ -165,3 +165,15 @@ Params:
   output. If you have wider edge effects than that, you should crop afterwards instead.
 - `gpu`: Whether to use the OpenCL version of supported dependencies.
 - `device`: Sets target OpenCL device.
+
+#### MagicDenoise
+
+Clybius's magic denoise function.
+
+Uses dark magic to denoise heavy grain from videos.
+Zero parameters, only magic.
+
+Params:
+
+- `clip`: The input video to apply deinterlacing to
+- `gpu`: Whether to use the OpenCL version of supported dependencies.

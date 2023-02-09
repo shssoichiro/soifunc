@@ -1,3 +1,7 @@
+## Version 0.3.0
+
+- Add Clybius's `MagicDenoise` function
+
 ## Version 0.2.0
 
 - Add gpu support for upscaling to `GoodResize` via `gpu` and `device` parameters.
