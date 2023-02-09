@@ -1,3 +1,8 @@
+## Version 0.3.1
+
+- Internal refactoring
+- Fix potential syntax issue with `MagicDenoise`
+
 ## Version 0.3.0
 
 - Add Clybius's `MagicDenoise` function
