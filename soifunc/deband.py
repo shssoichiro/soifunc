@@ -1,6 +1,5 @@
 import kagefunc
 import vapoursynth as vs
-import vsdeband
 import vsutil
 
 from .internal import type_error, value_error
@@ -35,7 +34,8 @@ def RetinexDeband(
         or clip.format.bits_per_sample > 16
     ):
         raise value_error("currently only supports 8-16 bit integer YUV input")
-    mask_threshold = mask_threshold >> (16 - clip.format.bits_per_sample)
+    bd_shift = 16 - clip.format.bits_per_sample
+    mask_threshold = mask_threshold >> bd_shift
     mask = (
         kagefunc.retinex_edgemask(clip)
         .std.Expr(f"x {mask_threshold} > x 0 ?")
@@ -43,13 +43,7 @@ def RetinexDeband(
     )
     if showmask:
         return mask
-    debander = vsdeband.F3kdb()
-    if debander.thr == 30:
-        # Because the latest version of vs-deband CHANGED THE SCALING of the threshold parameter...
-        raise type_error(
-            "please update to the latest git version of vs-deband: https://github.com/Irrational-Encoding-Wizardry/vs-deband"
-        )
-    deband = debander.deband(clip, thr=(threshold << 8), grains=0)
-    if clip.format.bits_per_sample != 16:
-        deband = vsutil.depth(deband, clip.format.bits_per_sample)
+    deband = clip.neo_f3kdb.Deband(
+        y=threshold, cb=threshold, cr=threshold, grainy=0, grainc=0
+    )
     return core.std.MaskedMerge(deband, clip, mask)
