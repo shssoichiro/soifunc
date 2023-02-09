@@ -1,6 +1,7 @@
 import kagefunc
 import vapoursynth as vs
 import vsdeband
+import vsutil
 
 from .internal import type_error, value_error
 
@@ -43,9 +44,12 @@ def RetinexDeband(
     if showmask:
         return mask
     debander = vsdeband.F3kdb()
-    if hasattr(debander, "use_neo"):
+    if debander.thr == 30:
+        # Because the latest version of vs-deband CHANGED THE SCALING of the threshold parameter...
         raise type_error(
             "please update to the latest git version of vs-deband: https://github.com/Irrational-Encoding-Wizardry/vs-deband"
         )
     deband = debander.deband(clip, thr=(threshold << 8), grains=0)
+    if clip.format.bits_per_sample != 16:
+        deband = vsutil.depth(deband, clip.format.bits_per_sample)
     return core.std.MaskedMerge(deband, clip, mask)
