@@ -2,7 +2,7 @@ import kagefunc
 import vapoursynth as vs
 import vsdeband
 
-from .internal import value_error
+from .internal import type_error, value_error
 
 core = vs.core
 
@@ -42,5 +42,10 @@ def RetinexDeband(
     )
     if showmask:
         return mask
-    deband = vsdeband.F3kdb(use_neo=True).deband(clip, thr=threshold, grains=0)
+    debander = vsdeband.F3kdb()
+    if hasattr(debander, "use_neo"):
+        raise type_error(
+            "please update to the latest git version of vs-deband: https://github.com/Irrational-Encoding-Wizardry/vs-deband"
+        )
+    deband = debander.deband(clip, thr=(threshold << 8), grains=0)
     return core.std.MaskedMerge(deband, clip, mask)

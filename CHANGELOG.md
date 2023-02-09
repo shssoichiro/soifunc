@@ -1,3 +1,9 @@
+## Version 0.3.2
+
+- Fix compatibility with a breaking change that vs-deband made right [here](https://github.com/Irrational-Encoding-Wizardry/vs-deband/commit/f9a9a9b3fed8319e0ec4c2237e6f9cd215b61619)
+  - If I had a dollar for each time setsugen's packages have broken API compatibility without telling anyone,
+    I'd have like 15 dollars. Which is kind of a lot.
+
 ## Version 0.3.1
 
 - Internal refactoring
