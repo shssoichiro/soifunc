@@ -7,6 +7,8 @@ import havsfunc
 import vapoursynth as vs
 from vsutil import Dither, depth, fallback, get_depth, scale_value
 
+from soifunc.denoise import best_dfttest
+
 from .internal import value_error
 
 core = vs.core
@@ -490,23 +492,13 @@ def SQTGMC(
                 ]
             )
         if denoiser == "dfttest":
-            try:
-                dfttest2 = importlib.import_module("dfttest2")
-            except ModuleNotFoundError:
-                dfttest2 = None
-            if dfttest2 is not None:
-                backend = dfttest2.Backend.NVRTC if gpu else dfttest2.Backend.CPU
-                dn_window = dfttest2.DFTTest(
-                    noise_window,
-                    sigma=sigma * 4,
-                    tbsize=noise_td,
-                    planes=cn_planes,
-                    backend=backend,
-                )
-            else:
-                dn_window = noise_window.dfttest.DFTTest(
-                    sigma=sigma * 4, tbsize=noise_td, planes=cn_planes
-                )
+            dn_window = best_dfttest(
+                noise_window,
+                sigma=sigma * 4,
+                tbsize=noise_td,
+                planes=cn_planes,
+                gpu=gpu,
+            )
         else:
             dn_window = noise_window.fft3dfilter.FFT3DFilter(
                 sigma=sigma,

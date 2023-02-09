@@ -628,7 +628,7 @@ def BM3DFast(
 def MagicDenoise(
     clip: vs.VideoNode,
     gpu: bool = False,
-):
+) -> vs.VideoNode:
     super = core.mv.Super(clip, hpad=16, vpad=16, rfilter=4)
     superSharp = core.mv.Super(clip, hpad=16, vpad=16, rfilter=4)
 
@@ -669,6 +669,20 @@ def MagicDenoise(
         thsad=220,
         thscd1=300,
     )
+    return best_dfttest(
+        clip,
+        slocation=[(0.0, 0.8), (0.06, 1.1), (0.12, 1.0), (1.0, 1.0)],
+        pmax=1000000,
+        pmin=1.25,
+        ftype=4,
+        tbsize=3,
+        ssystem=1,
+        gpu=gpu,
+    )
+
+
+# Run dfttest using the best available plugin supported by the host system
+def best_dfttest(clip: vs.VideoNode, gpu: bool = False, **kwargs) -> vs.VideoNode:
     try:
         import importlib
 
@@ -677,23 +691,6 @@ def MagicDenoise(
         dfttest2 = None
     if dfttest2 is not None:
         backend = dfttest2.Backend.NVRTC if gpu else dfttest2.Backend.CPU
-        return dfttest2.DFTTest(
-            clip,
-            slocation=[(0.0, 0.8), (0.06, 1.1), (0.12, 1.0), (1.0, 1.0)],
-            pmax=1000000,
-            pmin=1.25,
-            ftype=4,
-            tbsize=3,
-            ssystem=1,
-            backend=backend,
-        )
+        return dfttest2.DFTTest(clip, backend=backend, **kwargs)
     else:
-        return clip.dfttest.DFTTest(
-            clip,
-            slocation=[(0.0, 0.8), (0.06, 1.1), (0.12, 1.0), (1.0, 1.0)],
-            pmax=1000000,
-            pmin=1.25,
-            ftype=4,
-            tbsize=3,
-            ssystem=1,
-        )
+        return clip.dfttest.DFTTest(**kwargs)
