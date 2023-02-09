@@ -1,7 +1,7 @@
 ## Version 0.3.3
 
 - Things were still broken in the last version so I removed the vsdeband plugin entirely and now we just call neo_f3kdb directly
-  It turns out the bug in f3kdb that was the entire reason for the vsdeband script existing had been fixed in neo_f3kdb a long time ago anyway.
+  - It turns out the bug in f3kdb that was the entire reason for the vsdeband script existing had been fixed in neo_f3kdb a long time ago anyway.
 
 ## Version 0.3.2
 
