@@ -1,3 +1,7 @@
+## Version 0.3.4
+
+- Fix threshold on Deband to scale correctly so that we have finer tuned debanding thresholds, which apparently never worked correctly in vs-deband if you were using neo_f3kdb.
+
 ## Version 0.3.3
 
 - Things were still broken in the last version so I removed the vsdeband plugin entirely and now we just call neo_f3kdb directly

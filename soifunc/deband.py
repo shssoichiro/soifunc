@@ -43,7 +43,8 @@ def RetinexDeband(
     )
     if showmask:
         return mask
+    threshold = threshold << 2
     deband = clip.neo_f3kdb.Deband(
-        y=threshold, cb=threshold, cr=threshold, grainy=0, grainc=0
+        y=threshold, cb=threshold, cr=threshold, grainy=0, grainc=0, scale=True
     )
     return core.std.MaskedMerge(deband, clip, mask)
