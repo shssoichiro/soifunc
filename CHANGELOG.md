@@ -1,13 +1,11 @@
 ## Version 0.3.3
 
 - Things were still broken in the last version so I removed the vsdeband plugin entirely and now we just call neo_f3kdb directly
-  - It turns out the bug in f3kdb that was the entire reason for the vsdeband script existing had been fixed in neo_f3kdb a long time ago anyway.
+  - It turns out the bug in f3kdb that was the reason for the vsdeband script being needed had been fixed in neo_f3kdb a long time ago anyway.
 
 ## Version 0.3.2
 
-- Fix compatibility with a breaking change that vs-deband made right [here](https://github.com/Irrational-Encoding-Wizardry/vs-deband/commit/f9a9a9b3fed8319e0ec4c2237e6f9cd215b61619)
-  - If I had a dollar for each time setsugen's packages have broken API compatibility without telling anyone,
-    I'd have like 15 dollars. Which is kind of a lot.
+- Fix compatibility with a breaking change that vs-deband made [here](https://github.com/Irrational-Encoding-Wizardry/vs-deband/commit/f9a9a9b3fed8319e0ec4c2237e6f9cd215b61619)
 
 ## Version 0.3.1
 
