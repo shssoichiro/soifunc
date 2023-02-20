@@ -541,11 +541,11 @@ def SQTGMC(
             noise = core.std.MakeDiff(clip, denoised, planes=cn_planes)
             if input_type > 0:
                 deint_noise = noise
-            elif noise_deint == "bob":
+            elif noise_deint == "Bob":
                 deint_noise = noise.resize.Bob(
                     tff=tff, filter_param_a=0, filter_param_b=0.5
                 )
-            elif noise_deint == "generate":
+            elif noise_deint == "Generate":
                 deint_noise = SQTGMC_Generate2ndFieldNoise(noise, denoised, False, tff)
 
             # Motion-compensated stabilization of generated noise

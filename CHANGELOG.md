@@ -1,3 +1,7 @@
+## Version 0.3.5
+
+- Fix bug where SQGTMC may throw an error
+
 ## Version 0.3.4
 
 - Fix threshold on Deband to scale correctly so that we have finer tuned debanding thresholds, which apparently never worked correctly in vs-deband if you were using neo_f3kdb.
