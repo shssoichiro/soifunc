@@ -1,3 +1,7 @@
+## Version 0.4.0
+
+- Deprecate `ClipLimited`, use `std.Limiter` instead
+
 ## Version 0.3.5
 
 - Fix bug where SQGTMC may throw an error

@@ -20,6 +20,8 @@ __all__ = [
 
 def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
     """
+    DEPRECATED: Use `std.Limiter` instead
+
     Compression introduces rounding errors and whatnot that can lead
     to some pixels in your source being outside the range of
     valid Limited range values. These are clamped to the valid
@@ -30,16 +32,7 @@ def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
     Recommended to use at the very end of your filter chain,
     in the final encode bit depth.
     """
-    bd_shift = clip.format.bits_per_sample - 8
-    min = 16 << bd_shift
-    luma_max = 235 << bd_shift
-    chroma_max = 240 << bd_shift
-    return clip.std.Expr(
-        [
-            f"x {min} < {min} x {luma_max} > {luma_max} x ? ?",
-            f"x {min} < {min} x {chroma_max} > {chroma_max} x ? ?",
-        ]
-    )
+    return clip.std.Limiter()
 
 
 def MCDenoise(
