@@ -1,6 +1,7 @@
 ## Version 0.4.0
 
 - Deprecate `ClipLimited`, use `std.Limiter` instead
+- Add `Descale` function
 
 ## Version 0.3.5
 
