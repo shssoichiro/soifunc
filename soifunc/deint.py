@@ -1053,8 +1053,9 @@ def SQTGMC_Interpolate(
     device: Optional[int] = None,
 ) -> vs.VideoNode:
     """
-    Interpolate input clip using method given in EdiMode. Use Fallback or Bob as result if mode not in list. If ChromaEdi string if set then interpolate chroma
-    separately with that method (only really useful for EEDIx). The function is used as main algorithm starting point and for first two source-match stages
+    Interpolate input clip using method given in EdiMode. Use Fallback or Bob as result if mode not in list.
+    If ChromaEdi string if set then interpolate chroma separately with that method (only really useful for EEDIx).
+    The function is used as main algorithm starting point and for first two source-match stages
     """
     is_gray = clip.format.color_family == vs.GRAY
     field = 3 if tff else 2
