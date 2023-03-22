@@ -48,7 +48,7 @@ def retinex_deband(
     if showmask:
         return mask
 
-    if 'y_2' not in core.neo_f3kdb.Deband.__signature__.parameters:  # type: ignore
+    if 'y_2' in core.neo_f3kdb.Deband.__signature__.parameters:  # type: ignore
         threshold = threshold << 2
 
     deband = clip.neo_f3kdb.Deband(
