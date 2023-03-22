@@ -9,19 +9,8 @@ import havsfunc  # type:ignore[import]
 from vsdenoise import DFTTest, fft3d
 from vsrgtools import gauss_blur
 from vstools import (
-    CustomValueError,
-    DitherType,
-    FieldBased,
-    FieldBasedT,
-    UnsupportedFieldBasedError,
-    check_variable,
-    core,
-    depth,
-    fallback,
-    get_depth,
-    padder,
-    scale_value,
-    vs,
+    CustomValueError, DitherType, FieldBased, FieldBasedT, UnsupportedFieldBasedError, check_variable, core, depth,
+    fallback, get_depth, padder, scale_value, vs,
 )
 
 __all__ = [
