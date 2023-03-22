@@ -73,7 +73,7 @@ def SQTGMC(
     Stands for Simple Quality Temporal Global Motion Compensated (Deinterlacer).
 
     This is a modification of the QTGMC function from havsfunc, but simplified.
-    QTGMC has 90 args and this causing both its usability and maintainability to suffer.
+    QTGMC has 90 args, causing both its usability and maintainability to suffer.
     This version removes a majority of parameters, either baking them into a preset,
     auto-detecting them based on the video source, or removing their functionality entirely.
 
