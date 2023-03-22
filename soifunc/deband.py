@@ -26,7 +26,6 @@ def retinex_deband(
     This function does not add grain on its own. Use another function like
     `vsdeband.sized_grain` to do that.
     """
-    assert clip.format
     assert check_variable(clip, retinex_deband)
 
     if (

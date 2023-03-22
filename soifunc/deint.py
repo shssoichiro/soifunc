@@ -131,7 +131,6 @@ def SQTGMC(
 
     - device: Sets target OpenCL device.
     """
-    assert clip.format
     assert check_variable(clip, SQTGMC)
 
     if input_type != 1 and tff is None:
