@@ -4,7 +4,7 @@ import warnings
 from typing import Any, Callable
 
 from vsdenoise import DFTTest, FilterType
-from vstools import CustomValueError, core, vs
+from vstools import CustomValueError, core, vs, finalize_clip
 
 __all__ = [
     "ClipLimited",
@@ -19,7 +19,7 @@ __all__ = [
 
 def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
     """
-    DEPRECATED: Use `std.Limiter` instead!
+    DEPRECATED: Use `vstools.finalize_clip` instead!
 
     Compression introduces rounding errors and whatnot that can lead
     to some pixels in your source being outside the range of
@@ -31,9 +31,9 @@ def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
     Recommended to use at the very end of your filter chain,
     in the final encode bit depth.
     """
-    warnings.warn("This function has been deprecated in favor of `std.Limiter`!", DeprecationWarning)
+    warnings.warn("This function has been deprecated in favor of `vstools.finalize_clip`!", DeprecationWarning)
 
-    return clip.std.Limiter()
+    return finalize_clip(clip, None, func=ClipLimited)
 
 
 def MCDenoise(
