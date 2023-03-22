@@ -1,3 +1,8 @@
+## Version 0.4.1
+
+- Add `downscale_only` param to `Descale` function
+- Expose `DescaleMask` as a separate function
+
 ## Version 0.4.0
 
 - Deprecate `ClipLimited`, use `std.Limiter` instead

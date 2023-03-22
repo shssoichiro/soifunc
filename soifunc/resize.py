@@ -9,7 +9,7 @@ from .internal import value_error
 
 core = vs.core
 
-__all__ = ["GoodResize", "Descale"]
+__all__ = ["GoodResize", "Descale", "DescaleMask"]
 
 
 def GoodResize(
@@ -69,6 +69,7 @@ def Descale(
     c: float = 0.5,
     taps: int = 3,
     mask_threshold: int = 3200,
+    downscale_only: bool = False,
     show_mask: bool = False,
 ):
     """
@@ -82,9 +83,10 @@ def Descale(
     - And therefore: Returns a descaled clip with native resolution elements preserved
 
     It does not detect the proper resolution or kernel for you.
+
+    Passing `downscale_only = True` will only do the downscaling portion, it will not mask or re-upscale.
+    This may occasionally be useful.
     """
-    bd_shift = 16 - clip.format.bits_per_sample
-    mask_threshold = mask_threshold >> bd_shift
     y_src = vsutil.get_y(clip)
     kernel = kernel.lower()
     if kernel == "bilinear":
@@ -101,16 +103,48 @@ def Descale(
         y_desc = y_src.resize.Spline64(width, height)
     else:
         raise value_error("Unsupported resize kernel specified")
+
+    if downscale_only:
+        return y_desc
+
     y_upsc = GoodResize(y_desc, y_src.width, y_src.height)
+    mask = DescaleMask(mask_threshold, show_mask)
+    if show_mask:
+        return mask
+    y = core.std.MaskedMerge(y_upsc, y_src, mask)
+    return vsutil.join([y, vsutil.plane(clip, 1), vsutil.plane(clip, 2)])
+
+
+def DescaleMask(
+    src_clip,
+    descaled_clip,
+    threshold: int = 3200,
+    show_mask: bool = False,
+):
+    """
+    Generates a mask to preserve detail when downscaling.
+    `src_clip` should be the clip prior to any descaling.
+    `descaled_clip` should be the clip after descaling and rescaling.
+    i.e. they should be the same resolution.
+
+    It is generally easier to call `Descale` as a whole, but this may
+    occasionally be useful on its own.
+    """
+    if (
+        src_clip.format.bits_per_sample != descaled_clip.format.bits_per_sample
+        or src_clip.format.width != descaled_clip.format.width
+        or src_clip.format.height != descaled_clip.format.height
+    ):
+        raise value_error("Clips must have identical bit depth and resolution")
+
+    bd_shift = 16 - src_clip.format.bits_per_sample
+    threshold = threshold >> bd_shift
     mask = (
-        core.std.Expr([y_src, y_upsc], "x y - abs")
-        .std.Binarize(mask_threshold)
-        .std.Maximum()
+        core.std.Expr([src_clip, descaled_clip], "x y - abs")
+        .std.Binarize(threshold)
         .std.Maximum()
         .std.Inflate()
         .std.Inflate()
     )
     if show_mask:
         return mask
-    y = core.std.MaskedMerge(y_upsc, y_src, mask)
-    return vsutil.join([y, vsutil.plane(clip, 1), vsutil.plane(clip, 2)])
