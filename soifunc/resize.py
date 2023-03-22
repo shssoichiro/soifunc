@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from dataclasses import dataclass
 from inspect import getfullargspec
 from typing import Any, cast
@@ -9,7 +8,7 @@ from vskernels import Kernel, Scaler, ScalerT, Spline36
 from vsscale import SSIM, GenericScaler
 from vsscale import descale as descale_iew
 from vsscale import descale_detail_mask
-from vstools import check_variable_format, join, vs
+from vstools import check_variable_format, copy_signature, join, vs
 
 __all__ = [
     "good_resize", "GoodResize",
@@ -35,7 +34,7 @@ def good_resize(
 
 
 def descale(
-    clip,
+    clip: vs.VideoNode,
     width: int | None = None,
     height: int = 720,
     kernel: str | Kernel = "Bicubic",
@@ -63,6 +62,8 @@ def descale(
     Passing `downscale_only = True` will only do the downscaling portion, it will not mask or re-upscale.
     This may occasionally be useful. Using this argument will return *only* the downscaled luma plane.
     """
+    import warnings
+
     warnings.warn("Deprecated in favor of `vsscale.descale`!", DeprecationWarning)
 
     kernel = _get_scaler(kernel, b, c, taps)  # type:ignore
@@ -78,8 +79,8 @@ def descale(
 
 
 def descale_mask(
-    src_clip,
-    descaled_clip,
+    src_clip: vs.VideoNode,
+    descaled_clip: vs.VideoNode,
     threshold: int = 3200,
     show_mask: bool = False,
 ):
@@ -94,6 +95,8 @@ def descale_mask(
     It is generally easier to call `Descale` as a whole, but this may
     occasionally be useful on its own.
     """
+    import warnings
+
     warnings.warn("Deprecated in favor of `vsscale.descale_detail_mask`!", DeprecationWarning)
 
     return descale_detail_mask(src_clip, descaled_clip, threshold)
@@ -138,19 +141,28 @@ def _get_scaler(scaler: ScalerT, **kwargs: Any) -> Scaler:
 
 
 # Aliases
-def GoodResize(**kwargs) -> vs.VideoNode:
+@copy_signature(good_resize)
+def GoodResize(*args: Any, **kwargs: Any) -> vs.VideoNode:
+    import warnings
+
     warnings.warn("`GoodResize` has been deprecated in favor of `good_resize`!", DeprecationWarning)
 
-    return good_resize(**kwargs)
+    return good_resize(*args, **kwargs)
 
 
-def Descale(**kwargs) -> vs.VideoNode:
+@copy_signature(descale)
+def Descale(*args: Any, **kwargs: Any) -> vs.VideoNode:
+    import warnings
+
     warnings.warn("`Descale` has been deprecated in favor of `descale`!", DeprecationWarning)
 
-    return descale(**kwargs)
+    return descale(*args, **kwargs)
 
 
-def DescaleMask(**kwargs) -> vs.VideoNode:
+@copy_signature(descale_mask)
+def DescaleMask(*args: Any, **kwargs: Any) -> vs.VideoNode:
+    import warnings
+
     warnings.warn("`DescaleMask` has been deprecated in favor of `descale_mask`!", DeprecationWarning)
 
-    return descale_mask(**kwargs)
+    return descale_mask(*args, **kwargs)

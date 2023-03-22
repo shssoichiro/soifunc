@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import warnings
-
 from vsmasktools import retinex
-from vstools import InvalidVideoFormatError, check_variable, core, vs
+from vstools import InvalidVideoFormatError, check_variable, copy_signature, core, vs
 
 __all__ = [
     "retinex_deband", "RetinexDeband",
@@ -59,7 +57,10 @@ def retinex_deband(
 
 
 # Aliases
+@copy_signature(retinex_deband)
 def RetinexDeband(**kwargs) -> vs.VideoNode:
+    import warnings
+
     warnings.warn("`RetinexDeband` has been deprecated in favor of `retinex_deband`!", DeprecationWarning)
 
     return retinex_deband(**kwargs)

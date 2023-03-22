@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import warnings
 from typing import Any, Callable
 
 from vsdenoise import DFTTest, FilterType
-from vstools import CustomValueError, core, vs, finalize_clip
+from vstools import CustomValueError, copy_signature, core, finalize_clip, vs
 
 __all__ = [
     "ClipLimited",
@@ -31,6 +30,8 @@ def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
     Recommended to use at the very end of your filter chain,
     in the final encode bit depth.
     """
+    import warnings
+
     warnings.warn("This function has been deprecated in favor of `vstools.finalize_clip`!", DeprecationWarning)
 
     return finalize_clip(clip, None, func=ClipLimited)
@@ -62,7 +63,10 @@ def MCDenoise(
     clip = soifunc.MCDenoise(clip, denoiser)
     ```
     """
+    import warnings
+
     from vsdenoise import MVTools, MVToolsPresets
+
     warnings.warn("This function has been deprecated in favor of `vsdenoise.MVTools`!", DeprecationWarning)
 
     if denoiser and prefilter is None:
@@ -72,7 +76,7 @@ def MCDenoise(
     return mv.degrain(thSAD=75, ref=clip)
 
 
-def BM3DCPU(clip: vs.VideoNode, **kwargs: Any,):
+def BM3DCPU(clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
     """
     DEPRECATED: Use `vsdenoise.BM3DCPU.denoise` instead!
 
@@ -81,6 +85,8 @@ def BM3DCPU(clip: vs.VideoNode, **kwargs: Any,):
 
     See BM3DFast for usage.
     """
+    import warnings
+
     warnings.warn("Deprecated in favor of vsdenoise.BM3DCuda.denoise!", DeprecationWarning)
 
     from vsdenoise import BM3DCPU as BM3D_IEW
@@ -88,7 +94,7 @@ def BM3DCPU(clip: vs.VideoNode, **kwargs: Any,):
     return BM3D_IEW.denoise(clip, **kwargs)
 
 
-def BM3DCuda(clip: vs.VideoNode, **kwargs: Any,):
+def BM3DCuda(clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
     """
     DEPRECATED: Use `vsdenoise.BM3DCPU.denoise` instead!
     BM3D wrapper, similar to mvsfunc, but using `bm3dcuda`.
@@ -96,6 +102,8 @@ def BM3DCuda(clip: vs.VideoNode, **kwargs: Any,):
 
     See BM3DFast for usage.
     """
+    import warnings
+
     warnings.warn("Deprecated in favor of vsdenoise.BM3DCuda.denoise!", DeprecationWarning)
 
     from vsdenoise import BM3DCuda as BM3D_IEW
@@ -103,7 +111,7 @@ def BM3DCuda(clip: vs.VideoNode, **kwargs: Any,):
     return BM3D_IEW.denoise(clip, **kwargs)
 
 
-def BM3DCuda_RTC(clip: vs.VideoNode, **kwargs: Any,):
+def BM3DCuda_RTC(clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
     """
     DEPRECATED: Use `vsdenoise.BM3DCPU.denoise` instead!
     BM3D wrapper, similar to mvsfunc, but using `bm3dcuda_rtc`.
@@ -111,6 +119,8 @@ def BM3DCuda_RTC(clip: vs.VideoNode, **kwargs: Any,):
 
     See BM3DFast for usage.
     """
+    import warnings
+
     warnings.warn("Deprecated in favor of vsdenoise.BM3DCudaRTC.denoise!", DeprecationWarning)
 
     from vsdenoise import BM3DCudaRTC as BM3D_IEW
@@ -199,7 +209,10 @@ def magic_denoise(clip: vs.VideoNode) -> vs.VideoNode:
 
 
 # Aliases
-def MagicDenoise(**kwargs) -> vs.VideoNode:
+@copy_signature(magic_denoise)
+def MagicDenoise(*args: Any, **kwargs: Any) -> vs.VideoNode:
+    import warnings
+
     warnings.warn("`MagicDenoise` has been deprecated in favor of `magic_denoise`!", DeprecationWarning)
 
-    return magic_denoise(**kwargs)
+    return magic_denoise(*args, **kwargs)
