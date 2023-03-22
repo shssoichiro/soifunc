@@ -129,8 +129,10 @@ def BM3DFast(clip: vs.VideoNode, algorithm: str = "bm3dcpu", **kwargs: Any) -> v
         case "bm3dcuda": BM3DCuda(clip, **kwargs)
         case "bm3dcuda_rtc" | "bm3dcudartc": BM3DCuda_RTC(clip, **kwargs)
         case _: raise CustomValueError(
-            f"\"{algorithm}\" is not a valid algorithm!", BM3DFast,
-            reason=f"\"{algorithm}\" not in ['bm3dcpu', 'bm3dcuda', 'bm3dcuda_rtc']")
+            '"{algorithm}" is not a valid algorithm!', BM3DFast,
+            reason='"{algorithm}" not in {algorithms}', algorithm=algorithm,
+            algorithms=iter(['bm3dcpu', 'bm3dcuda', 'bm3dcuda_rtc', 'bm3dcudartc'])
+        )
 
     return clip  # keep mypy happy :)
 
