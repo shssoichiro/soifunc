@@ -108,7 +108,7 @@ def Descale(
         return y_desc
 
     y_upsc = GoodResize(y_desc, y_src.width, y_src.height)
-    mask = DescaleMask(mask_threshold, show_mask)
+    mask = DescaleMask(y_src, y_upsc, mask_threshold)
     if show_mask:
         return mask
     y = core.std.MaskedMerge(y_upsc, y_src, mask)
@@ -116,11 +116,11 @@ def Descale(
 
 
 def DescaleMask(
-    src_clip,
-    descaled_clip,
+    src_clip: vs.VideoNode,
+    descaled_clip: vs.VideoNode,
     threshold: int = 3200,
     show_mask: bool = False,
-):
+) -> vs.VideoNode:
     """
     Generates a mask to preserve detail when downscaling.
     `src_clip` should be the clip prior to any descaling.
@@ -132,8 +132,8 @@ def DescaleMask(
     """
     if (
         src_clip.format.bits_per_sample != descaled_clip.format.bits_per_sample
-        or src_clip.format.width != descaled_clip.format.width
-        or src_clip.format.height != descaled_clip.format.height
+        or src_clip.width != descaled_clip.width
+        or src_clip.height != descaled_clip.height
     ):
         raise value_error("Clips must have identical bit depth and resolution")
 
@@ -146,5 +146,4 @@ def DescaleMask(
         .std.Inflate()
         .std.Inflate()
     )
-    if show_mask:
-        return mask
+    return mask

@@ -1,3 +1,7 @@
+## Version 0.4.2
+
+- Fix Descale again, I need a better way to test these things before I push them
+
 ## Version 0.4.1
 
 - Add `downscale_only` param to `Descale` function
