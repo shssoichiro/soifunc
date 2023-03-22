@@ -7,7 +7,7 @@ from vskernels import Kernel, Scaler, ScalerT, Spline36
 from vsscale import SSIM, GenericScaler
 from vsscale import descale as descale_iew
 from vsscale import descale_detail_mask
-from vstools import check_variable_format, core, get_w, join, vs
+from vstools import check_variable_format, join, vs
 
 __all__ = [
     "good_resize", "GoodResize",
