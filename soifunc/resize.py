@@ -85,7 +85,7 @@ def Descale(
     It does not detect the proper resolution or kernel for you.
 
     Passing `downscale_only = True` will only do the downscaling portion, it will not mask or re-upscale.
-    This may occasionally be useful.
+    This may occasionally be useful. Using this argument will return *only* the downscaled luma plane.
     """
     y_src = vsutil.get_y(clip)
     kernel = kernel.lower()
