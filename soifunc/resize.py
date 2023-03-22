@@ -113,12 +113,12 @@ class HybridScaler(GenericScaler):
     ) -> vs.VideoNode:
         assert check_variable_format(clip, self.__class__)
 
-        luma = self.luma_scaler.scale(clip, width, height, shift, **kwargs)  # type:ignore
+        luma = self._luma.scale(clip, width, height, shift, **kwargs)
 
         if clip.format.num_planes == 1:
             return luma
 
-        chroma = self.chroma_scaler.scale(clip, width, height, shift, **kwargs)  # type:ignore
+        chroma = self._chroma.scale(clip, width, height, shift, **kwargs)
 
         return join(luma, chroma)
 
