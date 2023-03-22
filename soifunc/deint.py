@@ -153,11 +153,11 @@ def SQTGMC(
 
     # Select presets / tuning
     presets = ["slowest", "slow", "medium", "fast", "fastest"]
-    preset = Preset(preset)
+    preset = Preset(preset.lower())
     # TODO: Update to fully use Preset instead of just having a defined enum as we do now
 
     try:
-        preset_num = presets.index(preset.lower())
+        preset_num = presets.index(preset)
     except ValueError:
         raise CustomValueError("`preset` choice is invalid!", SQTGMC, f"{preset} not in {presets}")
 
