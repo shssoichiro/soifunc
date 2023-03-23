@@ -26,7 +26,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        apt install vapoursynth
+        sudo apt install vapoursynth
         export POETRY_HOME=/opt/poetry
         python3 -m venv $POETRY_HOME
         $POETRY_HOME/bin/pip install poetry
