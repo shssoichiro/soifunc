@@ -1,43 +1,77 @@
-import importlib
+from __future__ import annotations
+
 import multiprocessing
 from functools import partial
-from typing import Optional, Union
+from typing import Any, Optional, Union, cast
 
-import havsfunc
-import vapoursynth as vs
-from vsutil import Dither, depth, fallback, get_depth, scale_value
-
-from soifunc.denoise import best_dfttest
-
-from .internal import value_error
-
-core = vs.core
+import havsfunc  # type:ignore[import]
+from vsdenoise import DFTTest, fft3d
+from vsrgtools import gauss_blur
+from vstools import (
+    CustomStrEnum,
+    CustomValueError,
+    DitherType,
+    FieldBased,
+    FieldBasedT,
+    UnsupportedFieldBasedError,
+    check_variable,
+    core,
+    depth,
+    fallback,
+    get_depth,
+    padder,
+    scale_value,
+    vs,
+)
 
 __all__ = [
     "SQTGMC",
+    "Preset",
 ]
+
+
+class Preset(CustomStrEnum):
+    """String Enum representing a SQTGMC preset."""
+
+    # TODO: define the presets in here as opposed to in SQTGMC
+    SLOWEST = "slowest"
+    SLOW = "slow"
+    MEDIUM = "medium"
+    FAST = "fast"
+    FASTEST = "fastest"
+
+    @classmethod
+    def _missing_(cls: type[Preset], value: Any) -> Preset | None:
+        if value is None:
+            return cast(Preset, cls.SLOW)
+
+        raise CustomValueError(
+            f'"{value}" is not a valid value for {Preset}',
+            Preset,
+            f'"{value}" not in "{cls.SLOWEST}", "{cls.SLOW}", "{cls.MEDIUM}", "{cls.FAST}", "{cls.FASTEST}"',
+        )
 
 
 def SQTGMC(
     clip: vs.VideoNode,
-    preset: str = "slow",
+    preset: Preset = cast(Preset, Preset.SLOW),
     input_type: int = 0,
-    tff: Optional[bool] = None,
+    tff: FieldBasedT | None = None,
     fps_divisor: int = 1,
-    prog_sad_mask: Optional[float] = None,
-    sigma: Optional[float] = None,
+    prog_sad_mask: float | None = None,
+    sigma: float | None = None,
     show_noise: Union[bool, float] = 0.0,
-    grain_restore: Optional[float] = None,
-    noise_restore: Optional[float] = None,
+    grain_restore: float | None = None,
+    noise_restore: float | None = None,
     border: bool = False,
     gpu: bool = False,
-    device: Optional[int] = None,
+    device: int | None = None,
 ) -> vs.VideoNode:
     """
     Stands for Simple Quality Temporal Global Motion Compensated (Deinterlacer).
 
     This is a modification of the QTGMC function from havsfunc, but simplified.
-    QTGMC has 90 args and this causes both its usability and maintainability to suffer.
+    QTGMC has 90 args, causing both its usability and maintainability to suffer.
     This version removes a majority of parameters, either baking them into a preset,
     auto-detecting them based on the video source, or removing their functionality entirely.
 
@@ -50,6 +84,7 @@ def SQTGMC(
 
     - preset: Sets a range of defaults for different encoding speeds.
       Select from "slowest", "slow", "medium", "fast", and "fastest".
+      This can be either a Preset enum or a string representing the Preset.
 
     - input_type: Default = 0 for interlaced input.
       Settings 1 & 2 accept progressive input for deshimmer or repair.
@@ -94,19 +129,19 @@ def SQTGMC(
 
     - device: Sets target OpenCL device.
     """
-    if not isinstance(clip, vs.VideoNode):
-        raise value_error("this is not a clip")
+    assert check_variable(clip, SQTGMC)
 
     if input_type != 1 and tff is None:
-        with clip.get_frame(0) as f:
-            if (field_based := f.props.get("_FieldBased")) not in [1, 2]:
-                raise value_error(
-                    "TFF was not specified and field order could not be determined from frame properties"
-                )
+        tff = FieldBased.from_video(clip, strict=True)
 
-        tff = field_based == 2
+        if not tff.is_inter:
+            raise UnsupportedFieldBasedError(
+                "You must set `tff` or set the FieldBased property of your input clip!",
+                SQTGMC,
+                f"FieldBased={tff.pretty_string}",
+            )
 
-    is_gray = clip.format.color_family == vs.GRAY
+    is_gray = clip.format.color_family is vs.GRAY
 
     bits = get_depth(clip)
     neutral = 1 << (bits - 1)
@@ -115,12 +150,16 @@ def SQTGMC(
     # Presets
 
     # Select presets / tuning
-    preset = preset.lower()
     presets = ["slowest", "slow", "medium", "fast", "fastest"]
+    preset = Preset(preset.lower())
+    # TODO: Update to fully use Preset instead of just having a defined enum as we do now
+
     try:
         preset_num = presets.index(preset)
     except ValueError:
-        raise value_error("'Preset' choice is invalid")
+        raise CustomValueError(
+            "`preset` choice is invalid!", SQTGMC, f"{preset} not in {presets}"
+        )
 
     hd = clip.height >= 720
 
@@ -137,7 +176,6 @@ def SQTGMC(
     nn_size = [1, 1, 5, 4, 4][preset_num]
     n_neurons = [3, 2, 1, 0, 0][preset_num]
     edi_qual = [2, 1, 1, 1, 1][preset_num]
-    edi_max_d = [12, 8, 6, 5, 4][preset_num]
     s_mode = [2, 2, 2, 2, 0][preset_num]
     sl_mode_x = [2, 2, 2, 2, 0][preset_num]
     sl_rad = [3, 1, 1, 1, 1][preset_num]
@@ -175,21 +213,11 @@ def SQTGMC(
     denoiser = ["dfttest", "dfttest", "dfttest", "fft3df", "fft3df"][preset_num]
     denoise_mc = [True, True, False, False, False][preset_num]
     noise_tr = [2, 1, 1, 1, 0][preset_num]
-    noise_deint = ["Generate", "Bob", "", "", ""][preset_num]
+    noise_deint = ["generate", "bob", "", "", ""][preset_num]
     stabilize_noise = [True, True, True, False, False][preset_num]
 
     # The basic source-match step corrects and re-runs the interpolation of the input clip.
     # So it initially uses same interpolation settings as the main preset
-    match_nn_size = nn_size
-    match_n_neurons = n_neurons
-    match_edi_max_d = edi_max_d
-    match_edi_qual = edi_qual
-
-    match_nn_size2 = [1, 1, 5, 5, 4][preset_num]
-    match_n_neurons2 = [3, 2, 1, 0, 0][preset_num]
-    match_edi_max_d2 = [12, 8, 6, 5, 4][preset_num]
-    match_edi_qual2 = edi_qual
-
     th_sad1: int = 640
     th_sad2: int = 256
     th_scd1: int = 180
@@ -202,9 +230,6 @@ def SQTGMC(
 
     # Core defaults
     tr2 = tr2_x
-
-    # Source-match defaults
-    match_tr1 = tr1
 
     # Sharpness defaults. Sharpness default is always 1.0 (0.2 with source-match),
     # but adjusted to give roughly same sharpness for all settings
@@ -235,7 +260,7 @@ def SQTGMC(
     if sigma is None:
         sigma = 2.0
     if isinstance(show_noise, bool):
-        show_noise = 10.0 if show_noise else 0.0
+        show_noise = show_noise * 10
     if show_noise > 0:
         noise_process = 2
         noise_restore = 1.0
@@ -271,9 +296,7 @@ def SQTGMC(
     # Pad vertically during processing (to prevent artefacts at top & bottom edges)
     if border:
         h += 8
-        clip = clip.resize.Point(w, h, src_top=-4, src_height=h)
-    else:
-        clip = clip
+        clip = padder(clip, top=h // 2, bottom=h // 2)
 
     hpad = vpad = block_size
 
@@ -283,9 +306,7 @@ def SQTGMC(
     # Bob the input as a starting point for motion search clip
     if input_type <= 0:
         bobbed = clip.resize.Bob(tff=tff, filter_param_a=0, filter_param_b=0.5)
-    elif input_type == 1:
-        bobbed = clip
-    else:
+    elif input_type != 1:
         bobbed = clip.std.Convolution(matrix=[1, 2, 1], mode="v")
 
     search_clip = (
@@ -298,7 +319,7 @@ def SQTGMC(
     # Temporally smooth over the neighboring frames using a binomial kernel.
     # Binomial kernels give equal weight to even and odd frames and hence average away the shimmer.
     # The two kernels used are [1 2 1] and [1 4 6 4 1] for radius 1 and 2.
-    # These kernels are approximately Gaussian kernels, which work well as a prefilter
+    # These kernels are true Gaussian kernels, which work well as a prefilter
     # before motion analysis (hence the original name for this script)
     # Create linear weightings of neighbors first: -2 -1 0 1 2
     if not isinstance(search_clip, vs.VideoNode):
@@ -349,8 +370,9 @@ def SQTGMC(
                 .resize.Bilinear(w, h)
             )
         elif srch_clip_pp >= 2:
-            spatial_blur = havsfunc.Gauss(
-                core.std.Convolution(repair0, matrix=matrix, planes=cm_planes), p=2.35
+            spatial_blur = gauss_blur(
+                core.std.Convolution(repair0, matrix=matrix, planes=cm_planes),
+                sigma=0.5,
             )
             spatial_blur = core.std.Merge(
                 spatial_blur,
@@ -379,7 +401,7 @@ def SQTGMC(
             search_clip, s0=Str, c=Amp, chroma=chroma_motion
         )
         if bits > 8 and fast_ma:
-            search_clip = depth(search_clip, 8, dither_type=Dither.NONE)
+            search_clip = depth(search_clip, 8, dither_type=DitherType.NONE)
 
     super_args = dict(pel=sub_pel, hpad=hpad, vpad=vpad)
     analyse_args = dict(
@@ -492,19 +514,20 @@ def SQTGMC(
                 ]
             )
         if denoiser == "dfttest":
-            dn_window = best_dfttest(
+            dn_window = DFTTest.denoise(
                 noise_window,
                 sigma=sigma * 4,
                 tbsize=noise_td,
                 planes=cn_planes,
-                gpu=gpu,
             )
         else:
-            dn_window = noise_window.fft3dfilter.FFT3DFilter(
+            dn_window = fft3d(
+                noise_window,
                 sigma=sigma,
                 planes=cn_planes,
                 bt=noise_td,
                 ncpu=multiprocessing.cpu_count(),
+                func=SQTGMC,
             )
 
         # Rework denoised clip to match source format - various code paths here:
@@ -541,11 +564,11 @@ def SQTGMC(
             noise = core.std.MakeDiff(clip, denoised, planes=cn_planes)
             if input_type > 0:
                 deint_noise = noise
-            elif noise_deint == "Bob":
+            elif noise_deint == "bob":
                 deint_noise = noise.resize.Bob(
                     tff=tff, filter_param_a=0, filter_param_b=0.5
                 )
-            elif noise_deint == "Generate":
+            elif noise_deint == "generate":
                 deint_noise = SQTGMC_Generate2ndFieldNoise(noise, denoised, False, tff)
 
             # Motion-compensated stabilization of generated noise
@@ -733,11 +756,11 @@ def SQTGMC(
     else:
         back_blend1 = core.std.MakeDiff(
             thin,
-            havsfunc.Gauss(
+            gauss_blur(
                 core.std.MakeDiff(thin, lossed1, planes=0).std.Convolution(
                     matrix=matrix, planes=0
                 ),
-                p=5,
+                sigma=1.5,
             ),
             planes=0,
         )
@@ -764,11 +787,11 @@ def SQTGMC(
     else:
         back_blend2 = core.std.MakeDiff(
             sharp_limit1,
-            havsfunc.Gauss(
+            gauss_blur(
                 core.std.MakeDiff(sharp_limit1, lossed1, planes=0).std.Convolution(
                     matrix=matrix, planes=0
                 ),
-                p=5,
+                sigma=1.5,
             ),
             planes=0,
         )
@@ -986,7 +1009,7 @@ def SQTGMC_Generate2ndFieldNoise(
     clip: vs.VideoNode,
     interleaved: vs.VideoNode,
     chroma_noise: bool = False,
-    tff: Optional[bool] = None,
+    tff: FieldBasedT | None = None,
 ) -> vs.VideoNode:
     """
     Given noise extracted from an interlaced source (i.e. the noise is interlaced),
@@ -1027,13 +1050,14 @@ def SQTGMC_Interpolate(
     nn_size: int,
     n_neurons: int,
     edi_qual: int,
-    tff: Optional[bool] = None,
+    tff: FieldBasedT | None = None,
     gpu: bool = False,
     device: Optional[int] = None,
 ) -> vs.VideoNode:
     """
-    Interpolate input clip using method given in EdiMode. Use Fallback or Bob as result if mode not in list. If ChromaEdi string if set then interpolate chroma
-    separately with that method (only really useful for EEDIx). The function is used as main algorithm starting point and for first two source-match stages
+    Interpolate input clip using method given in EdiMode. Use Fallback or Bob as result if mode not in list.
+    If ChromaEdi string if set then interpolate chroma separately with that method (only really useful for EEDIx).
+    The function is used as main algorithm starting point and for first two source-match stages
     """
     is_gray = clip.format.color_family == vs.GRAY
     field = 3 if tff else 2

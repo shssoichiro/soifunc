@@ -1,70 +1,48 @@
-from typing import List, Optional, Union
+from __future__ import annotations
 
-import muvsfunc
-import vapoursynth as vs
-import vsutil
-from nnedi3_resample import nnedi3_resample
+from dataclasses import dataclass
+from inspect import getfullargspec
+from typing import Any, cast
 
-from .internal import value_error
+from vskernels import Kernel, Scaler, ScalerT, Spline36
+from vsscale import SSIM, GenericScaler
+from vsscale import descale as descale_iew
+from vsscale import descale_detail_mask
+from vstools import check_variable_format, copy_signature, join, vs
 
-core = vs.core
+__all__ = [
+    "good_resize",
+    "GoodResize",
+    "descale",
+    "Descale",
+    "descale_mask",
+    "DescaleMask",
+    "HybridScaler",
+]
 
-__all__ = ["GoodResize", "Descale", "DescaleMask"]
 
-
-def GoodResize(
+def good_resize(
     clip: vs.VideoNode,
     width: int,
     height: int,
     gpu: bool = False,
-    device: Optional[int] = None,
 ) -> vs.VideoNode:
     """High quality resizing filter"""
-    if clip.width == width and clip.height == height:
+    from vsaa import Nnedi3
+
+    if (width, height) == (clip.width, clip.height):
         return clip
-    planes: List[vs.VideoNode] = vsutil.split(clip)
-    upscale = width >= clip.width or height >= clip.height
 
-    for i in range(len(planes)):
-        if i == 0:
-            if upscale:
-                planes[0] = nnedi3_resample(
-                    planes[0],
-                    width,
-                    height,
-                    mode="nnedi3cl" if gpu else "znedi3",
-                    nsize=4,
-                    nns=4,
-                    device=device,
-                )
-            else:
-                planes[0] = muvsfunc.SSIM_downsample(
-                    planes[0],
-                    width,
-                    height,
-                    kernel="Lanczos",
-                    smooth=0.5,
-                    dither_type="error_diffusion",
-                )
-                planes[0] = vsutil.depth(planes[0], clip.format.bits_per_sample)
-        else:
-            planes[i] = planes[i].resize.Spline36(
-                width >> clip.format.subsampling_w,
-                height >> clip.format.subsampling_h,
-                dither_type="error_diffusion",
-            )
-
-    if len(planes) == 1:
-        return planes[0]
-
-    return vsutil.join(planes, clip.format.color_family)
+    return Nnedi3(opencl=gpu, scaler=HybridScaler(SSIM, Spline36)).scale(
+        clip, width, height
+    )
 
 
-def Descale(
-    clip,
-    width: int,
-    height: int,
-    kernel: str = "Bicubic",
+def descale(
+    clip: vs.VideoNode,
+    width: int | None = None,
+    height: int = 720,
+    kernel: str | Kernel = "Bicubic",
     b: float = 0.0,
     c: float = 0.5,
     taps: int = 3,
@@ -73,6 +51,8 @@ def Descale(
     show_mask: bool = False,
 ):
     """
+    DEPRECATED: Use `vsscale.descale` instead!
+
     Descales a clip using best practices.
 
     Supposedly there were other functions to do this but they turned out to be buggy,
@@ -87,41 +67,33 @@ def Descale(
     Passing `downscale_only = True` will only do the downscaling portion, it will not mask or re-upscale.
     This may occasionally be useful. Using this argument will return *only* the downscaled luma plane.
     """
-    y_src = vsutil.get_y(clip)
-    kernel = kernel.lower()
-    if kernel == "bilinear":
-        y_desc = y_src.resize.Bilinear(width, height)
-    elif kernel == "bicubic":
-        y_desc = y_src.resize.Bicubic(width, height, filter_param_a=b, filter_param_b=c)
-    elif kernel == "lanczos":
-        y_desc = y_src.resize.Lanczos(width, height, filter_param_a=taps)
-    elif kernel == "spline16":
-        y_desc = y_src.resize.Spline16(width, height)
-    elif kernel == "spline36":
-        y_desc = y_src.resize.Spline36(width, height)
-    elif kernel == "spline64":
-        y_desc = y_src.resize.Spline64(width, height)
-    else:
-        raise value_error("Unsupported resize kernel specified")
+    import warnings
 
-    if downscale_only:
-        return y_desc
+    warnings.warn("Deprecated in favor of `vsscale.descale`!", DeprecationWarning)
 
-    y_upsc = GoodResize(y_desc, y_src.width, y_src.height)
-    mask = DescaleMask(y_src, y_upsc, mask_threshold)
+    kernel = _get_scaler(kernel, b, c, taps)  # type:ignore
+
+    upscaler = HybridScaler(SSIM, Spline36) if not downscale_only else None
+
+    rescaled = descale_iew(
+        clip, width, height, kernels=[kernel], upscaler=upscaler, result=True
+    )
+
     if show_mask:
-        return mask
-    y = core.std.MaskedMerge(y_upsc, y_src, mask)
-    return vsutil.join([y, vsutil.plane(clip, 1), vsutil.plane(clip, 2)])
+        return rescaled.error_mask
+
+    return cast(vs.VideoNode, rescaled.out)
 
 
-def DescaleMask(
+def descale_mask(
     src_clip: vs.VideoNode,
     descaled_clip: vs.VideoNode,
     threshold: int = 3200,
     show_mask: bool = False,
-) -> vs.VideoNode:
+):
     """
+    DEPRECATED: Use `vsscale.descale_detail_mask` instead!
+
     Generates a mask to preserve detail when downscaling.
     `src_clip` should be the clip prior to any descaling.
     `descaled_clip` should be the clip after descaling and rescaling.
@@ -130,20 +102,87 @@ def DescaleMask(
     It is generally easier to call `Descale` as a whole, but this may
     occasionally be useful on its own.
     """
-    if (
-        src_clip.format.bits_per_sample != descaled_clip.format.bits_per_sample
-        or src_clip.width != descaled_clip.width
-        or src_clip.height != descaled_clip.height
-    ):
-        raise value_error("Clips must have identical bit depth and resolution")
+    import warnings
 
-    bd_shift = 16 - src_clip.format.bits_per_sample
-    threshold = threshold >> bd_shift
-    mask = (
-        core.std.Expr([src_clip, descaled_clip], "x y - abs")
-        .std.Binarize(threshold)
-        .std.Maximum()
-        .std.Inflate()
-        .std.Inflate()
+    warnings.warn(
+        "Deprecated in favor of `vsscale.descale_detail_mask`!", DeprecationWarning
     )
-    return mask
+
+    return descale_detail_mask(src_clip, descaled_clip, threshold)
+
+
+@dataclass
+class HybridScaler(GenericScaler):
+    luma_scaler: ScalerT
+    chroma_scaler: ScalerT
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+
+        self._luma = Scaler.ensure_obj(self.luma_scaler)
+        self._chroma = Scaler.ensure_obj(self.chroma_scaler)
+
+    def scale(  # type:ignore
+        self,
+        clip: vs.VideoNode,
+        width: int,
+        height: int,
+        shift: tuple[float, float] = (0, 0),
+        **kwargs: Any,
+    ) -> vs.VideoNode:
+        assert check_variable_format(clip, self.__class__)
+
+        luma = self._luma.scale(clip, width, height, shift, **kwargs)
+
+        if clip.format.num_planes == 1:
+            return luma
+
+        chroma = self._chroma.scale(clip, width, height, shift, **kwargs)
+
+        return join(luma, chroma)
+
+
+def _get_scaler(scaler: ScalerT, **kwargs: Any) -> Scaler:
+    scaler_cls = Scaler.from_param(scaler, _get_scaler)
+
+    args = getfullargspec(scaler_cls).args
+
+    clean_kwargs = {key: value for key, value in kwargs.items() if key in args}
+
+    return scaler_cls(**clean_kwargs)
+
+
+# Aliases
+@copy_signature(good_resize)
+def GoodResize(*args: Any, **kwargs: Any) -> vs.VideoNode:
+    import warnings
+
+    warnings.warn(
+        "`GoodResize` has been deprecated in favor of `good_resize`!",
+        DeprecationWarning,
+    )
+
+    return good_resize(*args, **kwargs)
+
+
+@copy_signature(descale)
+def Descale(*args: Any, **kwargs: Any) -> vs.VideoNode:
+    import warnings
+
+    warnings.warn(
+        "`Descale` has been deprecated in favor of `descale`!", DeprecationWarning
+    )
+
+    return descale(*args, **kwargs)
+
+
+@copy_signature(descale_mask)
+def DescaleMask(*args: Any, **kwargs: Any) -> vs.VideoNode:
+    import warnings
+
+    warnings.warn(
+        "`DescaleMask` has been deprecated in favor of `descale_mask`!",
+        DeprecationWarning,
+    )
+
+    return descale_mask(*args, **kwargs)

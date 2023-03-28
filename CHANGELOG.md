@@ -1,3 +1,11 @@
+## Version 0.5.0
+
+- Deprecate functions that have (basically) equivalent functionality with existing functions in the interest of reducing code duplication and people trying to run the exact same functions from multiple \*funcs
+- Update existing functions with updated tooling that should both run faster and be more resistant to unintended user input
+- Improve some typing and make the package overall a bit more Pythonic, as well as make it a tad more typesafe in certain scenarios
+- More useful and informative exceptions
+- Expand some functions with functionality that can be built on in the future (i.e. presets)
+
 ## Version 0.4.2
 
 - Fix Descale again, I need a better way to test these things before I push them

@@ -1,17 +1,15 @@
-import kagefunc
-import vapoursynth as vs
-import vsutil
+from __future__ import annotations
 
-from .internal import type_error, value_error
-
-core = vs.core
+from vsmasktools import retinex
+from vstools import InvalidVideoFormatError, check_variable, copy_signature, core, vs
 
 __all__ = [
+    "retinex_deband",
     "RetinexDeband",
 ]
 
 
-def RetinexDeband(
+def retinex_deband(
     clip: vs.VideoNode,
     threshold: int,
     mask_threshold: int = 3000,
@@ -21,30 +19,53 @@ def RetinexDeband(
     "medium" `threshold` in f3kdb is 48. I think that's a bit strong.
     16 might be a more sane starting point. Increase as needed.
 
-    `mask_threshold` determines how sensitive the mask is, lower values
-    should preserve more detail. It does not need to be manually scaled for bit-depth,
+    `mask_threshold` determines how sensitive the mask is.
+    Lower values should preserve more detail.
+    It does not need to be manually scaled for bit-depth,
     this function will do that automatically.
 
     This function does not add grain on its own. Use another function like
-    `kagefunc.adaptive_grain` to do that.
+    `vsdeband.sized_grain` to do that.
     """
+    assert check_variable(clip, retinex_deband)
+
     if (
         clip.format.color_family != vs.YUV
         or clip.format.sample_type != vs.INTEGER
         or clip.format.bits_per_sample > 16
     ):
-        raise value_error("currently only supports 8-16 bit integer YUV input")
+        raise InvalidVideoFormatError(
+            retinex_deband,
+            clip.format,
+            "The format {format.name} is not supported! It must be an 8-16bit integer YUV bit format!",
+        )
+
     bd_shift = 16 - clip.format.bits_per_sample
-    mask_threshold = mask_threshold >> bd_shift
+
     mask = (
-        kagefunc.retinex_edgemask(clip)
-        .std.Expr(f"x {mask_threshold} > x 0 ?")
-        .std.Inflate()
+        retinex(clip).std.Expr(f"x {mask_threshold >> bd_shift} > x 0 ?").std.Inflate()
     )
+
     if showmask:
         return mask
-    threshold = threshold << 2
+
+    if "y_2" in core.neo_f3kdb.Deband.__signature__.parameters:  # type: ignore
+        threshold = threshold << 2
+
     deband = clip.neo_f3kdb.Deband(
         y=threshold, cb=threshold, cr=threshold, grainy=0, grainc=0, scale=True
     )
     return core.std.MaskedMerge(deband, clip, mask)
+
+
+# Aliases
+@copy_signature(retinex_deband)
+def RetinexDeband(**kwargs) -> vs.VideoNode:
+    import warnings
+
+    warnings.warn(
+        "`RetinexDeband` has been deprecated in favor of `retinex_deband`!",
+        DeprecationWarning,
+    )
+
+    return retinex_deband(**kwargs)
