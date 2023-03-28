@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import multiprocessing
-from enum import StrEnum
 from functools import partial
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 import havsfunc  # type:ignore[import]
 from vsdenoise import DFTTest, fft3d
 from vsrgtools import gauss_blur
 from vstools import (
+    CustomStrEnum,
     CustomValueError,
     DitherType,
     FieldBased,
@@ -30,34 +30,31 @@ __all__ = [
 ]
 
 
-class Preset(StrEnum):
+class Preset(CustomStrEnum):
     """String Enum representing a SQTGMC preset."""
 
-    _value_: str
-
-    @classmethod
-    def _missing_(cls: type[Preset], value: Any) -> Preset | None:
-        if value is None:
-            return cls.SLOW
-
-        raise CustomValueError(
-            f'"{value}" is not a valid value for {Preset}',
-            Preset,
-            f'"{value}" not in {[v.value for v in cls]}',
-        )
-
+    # TODO: define the presets in here as opposed to in SQTGMC
     SLOWEST = "slowest"
     SLOW = "slow"
     MEDIUM = "medium"
     FAST = "fast"
     FASTEST = "fastest"
 
-    # TODO: define the presets in here as opposed to in SQTGMC
+    @classmethod
+    def _missing_(cls: type[Preset], value: Any) -> Preset | None:
+        if value is None:
+            return cast(Preset, cls.SLOW)
+
+        raise CustomValueError(
+            f'"{value}" is not a valid value for {Preset}',
+            Preset,
+            f'"{value}" not in "{cls.SLOWEST}", "{cls.SLOW}", "{cls.MEDIUM}", "{cls.FAST}", "{cls.FASTEST}"',
+        )
 
 
 def SQTGMC(
     clip: vs.VideoNode,
-    preset: Preset = Preset.SLOW,
+    preset: Preset = cast(Preset, Preset.SLOW),
     input_type: int = 0,
     tff: FieldBasedT | None = None,
     fps_divisor: int = 1,
@@ -1012,7 +1009,7 @@ def SQTGMC_Generate2ndFieldNoise(
     clip: vs.VideoNode,
     interleaved: vs.VideoNode,
     chroma_noise: bool = False,
-    tff: Optional[bool] = None,
+    tff: FieldBasedT | None = None,
 ) -> vs.VideoNode:
     """
     Given noise extracted from an interlaced source (i.e. the noise is interlaced),
@@ -1053,7 +1050,7 @@ def SQTGMC_Interpolate(
     nn_size: int,
     n_neurons: int,
     edi_qual: int,
-    tff: Optional[bool] = None,
+    tff: FieldBasedT | None = None,
     gpu: bool = False,
     device: Optional[int] = None,
 ) -> vs.VideoNode:
