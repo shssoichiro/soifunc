@@ -4,7 +4,8 @@ from vsmasktools import retinex
 from vstools import InvalidVideoFormatError, check_variable, copy_signature, core, vs
 
 __all__ = [
-    "retinex_deband", "RetinexDeband",
+    "retinex_deband",
+    "RetinexDeband",
 ]
 
 
@@ -34,20 +35,21 @@ def retinex_deband(
         or clip.format.bits_per_sample > 16
     ):
         raise InvalidVideoFormatError(
-            retinex_deband, clip.format,
-            'The format {format.name} is not supported! It must be an 8-16bit integer YUV bit format!'
+            retinex_deband,
+            clip.format,
+            "The format {format.name} is not supported! It must be an 8-16bit integer YUV bit format!",
         )
 
     bd_shift = 16 - clip.format.bits_per_sample
 
     mask = (
-        retinex(clip).std.Expr(f"x {mask_threshold >> bd_shift} > x 0 ?") .std.Inflate()
+        retinex(clip).std.Expr(f"x {mask_threshold >> bd_shift} > x 0 ?").std.Inflate()
     )
 
     if showmask:
         return mask
 
-    if 'y_2' in core.neo_f3kdb.Deband.__signature__.parameters:  # type: ignore
+    if "y_2" in core.neo_f3kdb.Deband.__signature__.parameters:  # type: ignore
         threshold = threshold << 2
 
     deband = clip.neo_f3kdb.Deband(
@@ -61,6 +63,9 @@ def retinex_deband(
 def RetinexDeband(**kwargs) -> vs.VideoNode:
     import warnings
 
-    warnings.warn("`RetinexDeband` has been deprecated in favor of `retinex_deband`!", DeprecationWarning)
+    warnings.warn(
+        "`RetinexDeband` has been deprecated in favor of `retinex_deband`!",
+        DeprecationWarning,
+    )
 
     return retinex_deband(**kwargs)

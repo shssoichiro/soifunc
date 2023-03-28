@@ -11,10 +11,13 @@ from vsscale import descale_detail_mask
 from vstools import check_variable_format, copy_signature, join, vs
 
 __all__ = [
-    "good_resize", "GoodResize",
-    "descale", "Descale",
-    "descale_mask", "DescaleMask",
-    "HybridScaler"
+    "good_resize",
+    "GoodResize",
+    "descale",
+    "Descale",
+    "descale_mask",
+    "DescaleMask",
+    "HybridScaler",
 ]
 
 
@@ -30,7 +33,9 @@ def good_resize(
     if (width, height) == (clip.width, clip.height):
         return clip
 
-    return Nnedi3(opencl=gpu, scaler=HybridScaler(SSIM, Spline36)).scale(clip, width, height)
+    return Nnedi3(opencl=gpu, scaler=HybridScaler(SSIM, Spline36)).scale(
+        clip, width, height
+    )
 
 
 def descale(
@@ -70,7 +75,9 @@ def descale(
 
     upscaler = HybridScaler(SSIM, Spline36) if not downscale_only else None
 
-    rescaled = descale_iew(clip, width, height, kernels=[kernel], upscaler=upscaler, result=True)
+    rescaled = descale_iew(
+        clip, width, height, kernels=[kernel], upscaler=upscaler, result=True
+    )
 
     if show_mask:
         return rescaled.error_mask
@@ -97,7 +104,9 @@ def descale_mask(
     """
     import warnings
 
-    warnings.warn("Deprecated in favor of `vsscale.descale_detail_mask`!", DeprecationWarning)
+    warnings.warn(
+        "Deprecated in favor of `vsscale.descale_detail_mask`!", DeprecationWarning
+    )
 
     return descale_detail_mask(src_clip, descaled_clip, threshold)
 
@@ -114,7 +123,12 @@ class HybridScaler(GenericScaler):
         self._chroma = Scaler.ensure_obj(self.chroma_scaler)
 
     def scale(  # type:ignore
-        self, clip: vs.VideoNode, width: int, height: int, shift: tuple[float, float] = (0, 0), **kwargs: Any
+        self,
+        clip: vs.VideoNode,
+        width: int,
+        height: int,
+        shift: tuple[float, float] = (0, 0),
+        **kwargs: Any,
     ) -> vs.VideoNode:
         assert check_variable_format(clip, self.__class__)
 
@@ -133,9 +147,7 @@ def _get_scaler(scaler: ScalerT, **kwargs: Any) -> Scaler:
 
     args = getfullargspec(scaler_cls).args
 
-    clean_kwargs = {
-        key: value for key, value in kwargs.items() if key in args
-    }
+    clean_kwargs = {key: value for key, value in kwargs.items() if key in args}
 
     return scaler_cls(**clean_kwargs)
 
@@ -145,7 +157,10 @@ def _get_scaler(scaler: ScalerT, **kwargs: Any) -> Scaler:
 def GoodResize(*args: Any, **kwargs: Any) -> vs.VideoNode:
     import warnings
 
-    warnings.warn("`GoodResize` has been deprecated in favor of `good_resize`!", DeprecationWarning)
+    warnings.warn(
+        "`GoodResize` has been deprecated in favor of `good_resize`!",
+        DeprecationWarning,
+    )
 
     return good_resize(*args, **kwargs)
 
@@ -154,7 +169,9 @@ def GoodResize(*args: Any, **kwargs: Any) -> vs.VideoNode:
 def Descale(*args: Any, **kwargs: Any) -> vs.VideoNode:
     import warnings
 
-    warnings.warn("`Descale` has been deprecated in favor of `descale`!", DeprecationWarning)
+    warnings.warn(
+        "`Descale` has been deprecated in favor of `descale`!", DeprecationWarning
+    )
 
     return descale(*args, **kwargs)
 
@@ -163,6 +180,9 @@ def Descale(*args: Any, **kwargs: Any) -> vs.VideoNode:
 def DescaleMask(*args: Any, **kwargs: Any) -> vs.VideoNode:
     import warnings
 
-    warnings.warn("`DescaleMask` has been deprecated in favor of `descale_mask`!", DeprecationWarning)
+    warnings.warn(
+        "`DescaleMask` has been deprecated in favor of `descale_mask`!",
+        DeprecationWarning,
+    )
 
     return descale_mask(*args, **kwargs)

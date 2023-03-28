@@ -9,8 +9,19 @@ import havsfunc  # type:ignore[import]
 from vsdenoise import DFTTest, fft3d
 from vsrgtools import gauss_blur
 from vstools import (
-    CustomValueError, DitherType, FieldBased, FieldBasedT, UnsupportedFieldBasedError, check_variable, core, depth,
-    fallback, get_depth, padder, scale_value, vs,
+    CustomValueError,
+    DitherType,
+    FieldBased,
+    FieldBasedT,
+    UnsupportedFieldBasedError,
+    check_variable,
+    core,
+    depth,
+    fallback,
+    get_depth,
+    padder,
+    scale_value,
+    vs,
 )
 
 __all__ = [
@@ -30,8 +41,9 @@ class Preset(StrEnum):
             return cls.SLOW
 
         raise CustomValueError(
-            f"\"{value}\" is not a valid value for {Preset}", Preset,
-            f"\"{value}\" not in {[v.value for v in cls]}"
+            f'"{value}" is not a valid value for {Preset}',
+            Preset,
+            f'"{value}" not in {[v.value for v in cls]}',
         )
 
     SLOWEST = "slowest"
@@ -128,7 +140,8 @@ def SQTGMC(
         if not tff.is_inter:
             raise UnsupportedFieldBasedError(
                 "You must set `tff` or set the FieldBased property of your input clip!",
-                SQTGMC, f"FieldBased={tff.pretty_string}"
+                SQTGMC,
+                f"FieldBased={tff.pretty_string}",
             )
 
     is_gray = clip.format.color_family is vs.GRAY
@@ -147,7 +160,9 @@ def SQTGMC(
     try:
         preset_num = presets.index(preset)
     except ValueError:
-        raise CustomValueError("`preset` choice is invalid!", SQTGMC, f"{preset} not in {presets}")
+        raise CustomValueError(
+            "`preset` choice is invalid!", SQTGMC, f"{preset} not in {presets}"
+        )
 
     hd = clip.height >= 720
 
@@ -359,7 +374,8 @@ def SQTGMC(
             )
         elif srch_clip_pp >= 2:
             spatial_blur = gauss_blur(
-                core.std.Convolution(repair0, matrix=matrix, planes=cm_planes), sigma=0.5
+                core.std.Convolution(repair0, matrix=matrix, planes=cm_planes),
+                sigma=0.5,
             )
             spatial_blur = core.std.Merge(
                 spatial_blur,
@@ -514,7 +530,7 @@ def SQTGMC(
                 planes=cn_planes,
                 bt=noise_td,
                 ncpu=multiprocessing.cpu_count(),
-                func=SQTGMC
+                func=SQTGMC,
             )
 
         # Rework denoised clip to match source format - various code paths here:
