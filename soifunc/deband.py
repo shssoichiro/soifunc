@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from vsmasktools import retinex
+from vsmasktools import dre_edgemask
 from vstools import InvalidVideoFormatError, check_variable, copy_signature, core, vs
 
 __all__ = [
@@ -12,7 +12,6 @@ __all__ = [
 def retinex_deband(
     clip: vs.VideoNode,
     threshold: int,
-    mask_threshold: int = 3000,
     showmask: bool = False,
 ) -> vs.VideoNode:
     """
@@ -40,11 +39,7 @@ def retinex_deband(
             "The format {format.name} is not supported! It must be an 8-16bit integer YUV bit format!",
         )
 
-    bd_shift = 16 - clip.format.bits_per_sample
-
-    mask = (
-        retinex(clip).std.Expr(f"x {mask_threshold >> bd_shift} > x 0 ?").std.Inflate()
-    )
+    mask = dre_edgemask(clip)
 
     if showmask:
         return mask
