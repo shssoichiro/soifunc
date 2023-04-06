@@ -68,7 +68,7 @@ def SQTGMC(
     device: int | None = None,
 ) -> vs.VideoNode:
     """
-    Stands for Simple Quality Temporal Global Motion Compensated (Deinterlacer).
+    Stands for Simple QTGMC.
 
     This is a modification of the QTGMC function from havsfunc, but simplified.
     QTGMC has 90 args, causing both its usability and maintainability to suffer.
