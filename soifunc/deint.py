@@ -308,6 +308,8 @@ def SQTGMC(
         bobbed = clip.resize.Bob(tff=tff, filter_param_a=0, filter_param_b=0.5)
     elif input_type != 1:
         bobbed = clip.std.Convolution(matrix=[1, 2, 1], mode="v")
+    else:
+        bobbed = clip
 
     search_clip = (
         search_super
