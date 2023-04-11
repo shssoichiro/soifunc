@@ -71,7 +71,7 @@ def descale(
 
     warnings.warn("Deprecated in favor of `vsscale.descale`!", DeprecationWarning)
 
-    kernel = _get_scaler(kernel, b, c, taps)  # type:ignore
+    kernel = _get_scaler(kernel, b=b, c=c, taps=taps)
 
     upscaler = HybridScaler(SSIM, Spline36) if not downscale_only else None
 
