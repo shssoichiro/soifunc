@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import multiprocessing
 from functools import partial
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Sequence, Union, cast
 
-import havsfunc  # type:ignore[import]
+import vsdenoise
 from vsdenoise import DFTTest, fft3d
+from vsexprtools import complexpr_available, norm_expr
 from vsrgtools import gauss_blur
 from vstools import (
     CustomStrEnum,
@@ -13,12 +14,15 @@ from vstools import (
     DitherType,
     FieldBased,
     FieldBasedT,
+    PlanesT,
     UnsupportedFieldBasedError,
+    check_ref_clip,
     check_variable,
     core,
     depth,
     fallback,
     get_depth,
+    normalize_planes,
     padder,
     scale_value,
     vs,
@@ -68,8 +72,7 @@ def SQTGMC(
     th_sad2: int = 256,
     th_scd1: int = 180,
     th_scd2: int = 98,
-    str: float = 2.0,
-    amp: float = 0.0625,
+    strength: float = 2.0,
     gpu: bool = False,
     device: int | None = None,
 ) -> vs.VideoNode:
@@ -322,11 +325,11 @@ def SQTGMC(
     # Create linear weightings of neighbors first: -2 -1 0 1 2
     if not isinstance(search_clip, vs.VideoNode):
         if tr0 > 0:
-            ts1 = havsfunc.AverageFrames(
+            ts1 = average_frames(
                 bobbed, weights=[1] * 3, scenechange=28 / 255, planes=cm_planes
             )  # 0.00  0.33  0.33  0.33  0.00
         if tr0 > 1:
-            ts2 = havsfunc.AverageFrames(
+            ts2 = average_frames(
                 bobbed, weights=[1] * 5, scenechange=28 / 255, planes=cm_planes
             )  # 0.20  0.20  0.20  0.20  0.20
 
@@ -395,8 +398,8 @@ def SQTGMC(
                 [spatial_blur, tweaked],
                 expr=expr if chroma_motion or is_gray else [expr, ""],
             )
-        search_clip = havsfunc.DitherLumaRebuild(
-            search_clip, s0=str, c=amp, chroma=chroma_motion
+        search_clip = vsdenoise.prefilter_to_full_range(
+            search_clip, strength, cm_planes
         )
         if bits > 8 and fast_ma:
             search_clip = depth(search_clip, 8, dither_type=DitherType.NONE)
@@ -537,11 +540,10 @@ def SQTGMC(
             if input_type > 0:
                 denoised = dn_window
             else:
-                denoised = havsfunc.Weave(
-                    dn_window.std.SeparateFields(tff=tff).std.SelectEvery(
-                        cycle=4, offsets=[0, 3]
-                    ),
-                    tff=tff,
+                denoised = (
+                    dn_window.std.SeparateFields(tff=tff)
+                    .std.SelectEvery(cycle=4, offsets=[0, 3])
+                    .std.DoubleWeave(tff)[::2]
                 )
         elif input_type > 0:
             if noise_tr <= 0:
@@ -549,11 +551,12 @@ def SQTGMC(
             else:
                 denoised = dn_window.std.SelectEvery(cycle=noise_td, offsets=noise_tr)
         else:
-            denoised = havsfunc.Weave(
-                dn_window.std.SeparateFields(tff=tff).std.SelectEvery(
+            denoised = (
+                dn_window.std.SeparateFields(tff=tff)
+                .std.SelectEvery(
                     cycle=noise_td * 4, offsets=[noise_tr * 2, noise_tr * 6 + 3]
-                ),
-                tff=tff,
+                )
+                .std.DoubleWeave(tff)[::2]
             )
 
         if total_restore > 0:
@@ -597,11 +600,10 @@ def SQTGMC(
     # Support badly deinterlaced progressive content - drop half the fields and reweave
     # to get 1/2fps interlaced stream appropriate for QTGMC processing
     if input_type > 1:
-        eedi_input = havsfunc.Weave(
-            inner_clip.std.SeparateFields(tff=tff).std.SelectEvery(
-                cycle=4, offsets=[0, 3]
-            ),
-            tff=tff,
+        eedi_input = (
+            inner_clip.std.SeparateFields(tff=tff)
+            .std.SelectEvery(cycle=4, offsets=[0, 3])
+            .std.DoubleWeave(tff)[::2]
         )
     else:
         eedi_input = inner_clip
@@ -774,7 +776,7 @@ def SQTGMC(
                 back_blend1, core.rgvs.Repair(back_blend1, edi, mode=12), mode=1
             )
     elif sl_mode == 2:
-        sharp_limit1 = havsfunc.mt_clamp(back_blend1, t_max, t_min, 0, 0)
+        sharp_limit1 = mt_clamp(back_blend1, t_max, t_min, 0, 0)
     else:
         sharp_limit1 = back_blend1
 
@@ -867,7 +869,7 @@ def SQTGMC(
                 repair2, core.rgvs.Repair(repair2, edi, mode=12), mode=1
             )
     elif sl_mode >= 4:
-        sharp_limit2 = havsfunc.mt_clamp(repair2, t_max, t_min, 0, 0)
+        sharp_limit2 = mt_clamp(repair2, t_max, t_min, 0, 0)
     else:
         sharp_limit2 = repair2
 
@@ -1039,7 +1041,7 @@ def SQTGMC_Generate2ndFieldNoise(
         expr=expr if chroma_noise or is_gray else [expr, ""],
     )
     new_noise = core.std.MergeDiff(noise_min, var_random, planes=planes)
-    return havsfunc.Weave(core.std.Interleave([orig_noise, new_noise]), tff=tff)
+    return core.std.Interleave([orig_noise, new_noise]).std.DoubleWeave(tff)[::2]
 
 
 def SQTGMC_Interpolate(
@@ -1075,3 +1077,59 @@ def SQTGMC_Interpolate(
     return core.std.ShufflePlanes(
         [interp, interp_uv], planes=[0, 1, 2], colorfamily=clip.format.color_family
     )
+
+
+def scdetect(clip: vs.VideoNode, threshold: float = 0.1) -> vs.VideoNode:
+    def _copy_property(_n: int, f: list[vs.VideoFrame]) -> vs.VideoFrame:
+        fout = f[0].copy()
+        fout.props["_SceneChangePrev"] = f[1].props["_SceneChangePrev"]
+        fout.props["_SceneChangeNext"] = f[1].props["_SceneChangeNext"]
+        return fout
+
+    assert check_variable(clip, scdetect)
+
+    sc = clip
+    if clip.format.color_family == vs.RGB:
+        sc = clip.resize.Point(format=vs.GRAY8, matrix_s="709")
+
+    sc = sc.misc.SCDetect(threshold)
+    if clip.format.color_family == vs.RGB:
+        sc = clip.std.ModifyFrame([clip, sc], _copy_property)
+
+    return sc
+
+
+def average_frames(
+    clip: vs.VideoNode,
+    weights: float | Sequence[float],
+    scenechange: float | None = None,
+    planes: PlanesT = None,
+) -> vs.VideoNode:
+    assert check_variable(clip, average_frames)
+    planes = normalize_planes(clip, planes)
+
+    if scenechange:
+        clip = scdetect(clip, scenechange)
+    return clip.std.AverageFrames(
+        weights=weights, scenechange=scenechange, planes=planes
+    )
+
+
+def mt_clamp(
+    clip: vs.VideoNode,
+    bright: vs.VideoNode,
+    dark: vs.VideoNode,
+    overshoot: int = 0,
+    undershoot: int = 0,
+    planes: PlanesT = None,
+) -> vs.VideoNode:
+    """clamp the value of the clip between bright + overshoot and dark - undershoot"""
+    check_ref_clip(clip, bright, mt_clamp)
+    check_ref_clip(clip, dark, mt_clamp)
+    planes = normalize_planes(clip, planes)
+
+    if complexpr_available:
+        expr = f"x z {undershoot} - y {overshoot} + clamp"
+    else:
+        expr = f"x z {undershoot} - max y {overshoot} + min"
+    return norm_expr([clip, bright, dark], expr, planes)

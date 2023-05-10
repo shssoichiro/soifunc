@@ -1,3 +1,9 @@
+## Version next
+
+- expose SAD parameters in SQTGMC
+- fix some presets in SQTGMC, mainly use a not-stupid nnsize
+- remove dependency on havsfunc
+
 ## Version 0.5.0
 
 - Deprecate functions that have (basically) equivalent functionality with existing functions in the interest of reducing code duplication and people trying to run the exact same functions from multiple \*funcs
