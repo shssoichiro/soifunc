@@ -45,7 +45,7 @@ def retinex_deband(
     if showmask:
         return mask
 
-    deband = F3kdb(clip).deband(clip, thr=threshold << 2)
+    deband = F3kdb().deband(clip, thr=(threshold << 2))
     return core.std.MaskedMerge(deband, clip, mask)
 
 
