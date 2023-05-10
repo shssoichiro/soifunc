@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from vsdenoise import DFTTest, FilterType
 from vstools import CustomValueError, copy_signature, core, finalize_clip, vs
@@ -43,13 +43,10 @@ def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
 
 def MCDenoise(
     clip: vs.VideoNode,
-    denoiser: Callable[..., vs.VideoNode] | None = None,
-    prefilter: vs.VideoNode | None = None,
+    denoiser: Callable[..., vs.VideoNode],
+    prefilter: Optional[vs.VideoNode] = None,
 ) -> vs.VideoNode:
     """
-    DEPRECATED: Use `vsdenoise.MVTools` instead!
-    This function currently uses MVTools with sane presets internally!
-
     Applies motion compensation to a denoised clip to improve detail preservation.
     Credit to Clybius for creating this code.
 
@@ -61,26 +58,62 @@ def MCDenoise(
     Example usage:
     ```python
     import soifunc
-    import dfttest2
-    import functools #functools is built in to python
-    denoiser = functools.partial(dfttest2.DFTTest, sigma=1.5, backend=dfttest2.Backend.CPU)
+    from vsdenoise import DFTTest
+    import functools # functools is built in to python
+    denoiser = functools.partial(DFTTest().denoise, sloc=1.5, tr=1)
     clip = soifunc.MCDenoise(clip, denoiser)
     ```
     """
-    import warnings
+    prefilter = prefilter or clip
+    # one level (temporal radius) is enough for MRecalculate
+    super = core.mv.Super(prefilter, hpad=16, vpad=16, levels=1)
+    # all levels for MAnalyse
+    superfilt = core.mv.Super(clip, hpad=16, vpad=16)
 
-    from vsdenoise import MVTools, MVToolsPresets
-
-    warnings.warn(
-        "This function has been deprecated in favor of `vsdenoise.MVTools`!",
-        DeprecationWarning,
+    # Generate motion vectors
+    backward2 = core.mv.Analyse(
+        superfilt, isb=True, blksize=16, overlap=8, delta=2, search=3, truemotion=True
+    )
+    backward = core.mv.Analyse(
+        superfilt, isb=True, blksize=16, overlap=8, search=3, truemotion=True
+    )
+    forward = core.mv.Analyse(
+        superfilt, isb=False, blksize=16, overlap=8, search=3, truemotion=True
+    )
+    forward2 = core.mv.Analyse(
+        superfilt, isb=False, blksize=16, overlap=8, delta=2, search=3, truemotion=True
     )
 
-    if denoiser and prefilter is None:
-        prefilter = denoiser(clip)
+    # Recalculate for higher consistency / quality
+    backward_re2 = core.mv.Recalculate(
+        super, backward2, blksize=8, overlap=4, search=3, truemotion=True
+    )
+    backward_re = core.mv.Recalculate(
+        super, backward, blksize=8, overlap=4, search=3, truemotion=True
+    )
+    forward_re = core.mv.Recalculate(
+        super, forward, blksize=8, overlap=4, search=3, truemotion=True
+    )
+    forward_re2 = core.mv.Recalculate(
+        super, forward2, blksize=8, overlap=4, search=3, truemotion=True
+    )
 
-    mv = MVTools(prefilter or clip, **MVToolsPresets.SMDE)
-    return mv.degrain(thSAD=75, ref=clip)
+    # Pixel-based motion comp
+    # Generate hierarchical frames from motion vector data
+    backward_comp2 = core.mv.Flow(clip, super, backward_re2)
+    backward_comp = core.mv.Flow(clip, super, backward_re)
+    forward_comp = core.mv.Flow(clip, super, forward_re)
+    forward_comp2 = core.mv.Flow(clip, super, forward_re2)
+
+    # Interleave the mocomp'd frames
+    interleave = core.std.Interleave(
+        [forward_comp2, forward_comp, clip, backward_comp, backward_comp2]
+    )
+
+    clip = denoiser(clip=interleave)
+
+    # Every 5 frames, select the 3rd/middle frame (second digit counts from 0)
+    return core.std.SelectEvery(clip, 5, 2)
 
 
 def BM3DCPU(clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
