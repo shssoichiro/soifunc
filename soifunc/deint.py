@@ -64,6 +64,12 @@ def SQTGMC(
     grain_restore: float | None = None,
     noise_restore: float | None = None,
     border: bool = False,
+    th_sad1: int = 640,
+    th_sad2: int = 256,
+    th_scd1: int = 180,
+    th_scd2: int = 98,
+    str: float = 2.0,
+    amp: float = 0.0625,
     gpu: bool = False,
     device: int | None = None,
 ) -> vs.VideoNode:
@@ -170,10 +176,10 @@ def SQTGMC(
     # Preset groups, from slowest to fastest
     tr0 = [2, 2, 2, 1, 0][preset_num]
     tr1 = [2, 2, 1, 1, 1][preset_num]
-    tr2_x = [3, 2, 1, 0, 0][preset_num]
+    tr2 = [3, 2, 1, 0, 0][preset_num]
     rep0 = [4, 4, 3, 0, 0][preset_num]
     rep2 = [4, 4, 4, 3, 0][preset_num]
-    nn_size = [1, 1, 5, 4, 4][preset_num]
+    nn_size = 6
     n_neurons = [3, 2, 1, 0, 0][preset_num]
     edi_qual = [2, 1, 1, 1, 1][preset_num]
     s_mode = [2, 2, 2, 2, 0][preset_num]
@@ -218,18 +224,8 @@ def SQTGMC(
 
     # The basic source-match step corrects and re-runs the interpolation of the input clip.
     # So it initially uses same interpolation settings as the main preset
-    th_sad1: int = 640
-    th_sad2: int = 256
-    th_scd1: int = 180
-    th_scd2: int = 98
-    Str: float = 2.0
-    Amp: float = 0.0625
-
     # ---------------------------------------
     # Settings
-
-    # Core defaults
-    tr2 = tr2_x
 
     # Sharpness defaults. Sharpness default is always 1.0 (0.2 with source-match),
     # but adjusted to give roughly same sharpness for all settings
@@ -400,7 +396,7 @@ def SQTGMC(
                 expr=expr if chroma_motion or is_gray else [expr, ""],
             )
         search_clip = havsfunc.DitherLumaRebuild(
-            search_clip, s0=Str, c=Amp, chroma=chroma_motion
+            search_clip, s0=str, c=amp, chroma=chroma_motion
         )
         if bits > 8 and fast_ma:
             search_clip = depth(search_clip, 8, dither_type=DitherType.NONE)
