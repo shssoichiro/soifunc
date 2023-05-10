@@ -110,7 +110,7 @@ def MCDenoise(
         [forward_comp2, forward_comp, clip, backward_comp, backward_comp2]
     )
 
-    clip = denoiser(clip=interleave)
+    clip = denoiser(interleave)
 
     # Every 5 frames, select the 3rd/middle frame (second digit counts from 0)
     return core.std.SelectEvery(clip, 5, 2)
