@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from vsdeband import F3kdb
 from vsmasktools import dre_edgemask
 from vstools import InvalidVideoFormatError, check_variable, copy_signature, core, vs
 
@@ -44,12 +45,7 @@ def retinex_deband(
     if showmask:
         return mask
 
-    if "y_2" in core.neo_f3kdb.Deband.__signature__.parameters:  # type: ignore
-        threshold = threshold << 2
-
-    deband = clip.neo_f3kdb.Deband(
-        y=threshold, cb=threshold, cr=threshold, grainy=0, grainc=0, scale=True
-    )
+    deband = F3kdb(clip).deband(clip, thr=threshold << 2)
     return core.std.MaskedMerge(deband, clip, mask)
 
 
