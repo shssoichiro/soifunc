@@ -15,7 +15,7 @@ First install the required plugins which are not available in pip:
 - [neo_f3kdb](https://github.com/HomeOfAviSynthPlusEvolution/neo_f3kdb)
 - [kagefunc](https://github.com/Irrational-Encoding-Wizardry/kagefunc)
 - [muvsfunc](https://github.com/WolframRhodium/muvsfunc)
-- [havsfunc](https://github.com/WolframRhodium/havsfunc)
+- [havsfunc](https://github.com/HomeOfVapourSynthEvolution/havsfunc)
 - [mvsfunc](https://github.com/HomeOfVapourSynthEvolution/mvsfunc)
 - [znedi3](https://github.com/sekrit-twc/znedi3)
 - [nnedi3_resample](https://github.com/HomeOfVapourSynthEvolution/nnedi3_resample)
