@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from inspect import getfullargspec
 from typing import Any, cast
 
-from vskernels import Kernel, Scaler, ScalerT, Spline36
+from vskernels import Kernel, Scaler, ScalerT, Spline36, Catrom
 from vsscale import SSIM, GenericScaler
 from vsscale import descale as descale_iew
 from vsscale import descale_detail_mask
@@ -41,12 +41,8 @@ def good_resize(
 def descale(
     clip: vs.VideoNode,
     width: int | None = None,
-    height: int = 720,
-    kernel: str | Kernel = "Bicubic",
-    b: float = 0.0,
-    c: float = 0.5,
-    taps: int = 3,
-    mask_threshold: int = 3200,
+    height: int | None = None,
+    kernel: Kernel = Catrom,
     downscale_only: bool = False,
     show_mask: bool = False,
 ):
@@ -70,8 +66,6 @@ def descale(
     import warnings
 
     warnings.warn("Deprecated in favor of `vsscale.descale`!", DeprecationWarning)
-
-    kernel = _get_scaler(kernel, b=b, c=c, taps=taps)
 
     upscaler = HybridScaler(SSIM, Spline36) if not downscale_only else None
 
