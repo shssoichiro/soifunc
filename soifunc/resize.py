@@ -10,11 +10,6 @@ from vstools import check_variable_format, join, vs
 
 __all__ = [
     "good_resize",
-    "GoodResize",
-    "descale",
-    "Descale",
-    "descale_mask",
-    "DescaleMask",
     "HybridScaler",
 ]
 

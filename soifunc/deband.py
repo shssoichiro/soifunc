@@ -6,7 +6,6 @@ from vstools import InvalidVideoFormatError, check_variable, core, vs
 
 __all__ = [
     "retinex_deband",
-    "RetinexDeband",
 ]
 
 
