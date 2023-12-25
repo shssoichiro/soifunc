@@ -116,6 +116,10 @@ class HybridScaler(GenericScaler):
         self._luma = Scaler.ensure_obj(self.luma_scaler)
         self._chroma = Scaler.ensure_obj(self.chroma_scaler)
 
+    @property
+    def kernel_radius(self) -> int:
+        return self._luma.kernel_radius
+
     def scale(  # type:ignore
         self,
         clip: vs.VideoNode,
