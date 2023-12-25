@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Optional
+from typing import Callable, Optional
 
 from vsdenoise import DFTTest, FilterType
-from vstools import CustomValueError, copy_signature, core, finalize_clip, vs
+from vstools import core, vs
 
 __all__ = [
     "ClipLimited",
@@ -15,30 +15,6 @@ __all__ = [
     "magic_denoise",
     "MagicDenoise",
 ]
-
-
-def ClipLimited(clip: vs.VideoNode) -> vs.VideoNode:
-    """
-    DEPRECATED: Use `vstools.finalize_clip` instead!
-
-    Compression introduces rounding errors and whatnot that can lead
-    to some pixels in your source being outside the range of
-    valid Limited range values. These are clamped to the valid
-    range by the player on playback, but that means we can save
-    a small amount of bitrate if we clamp them at encode time.
-    This function does that.
-
-    Recommended to use at the very end of your filter chain,
-    in the final encode bit depth.
-    """
-    import warnings
-
-    warnings.warn(
-        "This function has been deprecated in favor of `vstools.finalize_clip`!",
-        DeprecationWarning,
-    )
-
-    return finalize_clip(clip, None, func=ClipLimited)
 
 
 def MCDenoise(
@@ -116,89 +92,6 @@ def MCDenoise(
     return core.std.SelectEvery(clip, 5, 2)
 
 
-def BM3DCPU(clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-    """
-    DEPRECATED: Use `vsdenoise.BM3DCPU.denoise` instead!
-
-    BM3D wrapper, similar to mvsfunc, but using `bm3dcpu` which is about 50% faster.
-    https://github.com/WolframRhodium/VapourSynth-BM3DCUDA
-
-    See BM3DFast for usage.
-    """
-    import warnings
-
-    warnings.warn(
-        "Deprecated in favor of vsdenoise.BM3DCuda.denoise!", DeprecationWarning
-    )
-
-    from vsdenoise import BM3DCPU as BM3D_IEW
-
-    return BM3D_IEW.denoise(clip, **kwargs)
-
-
-def BM3DCuda(clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-    """
-    DEPRECATED: Use `vsdenoise.BM3DCPU.denoise` instead!
-    BM3D wrapper, similar to mvsfunc, but using `bm3dcuda`.
-    https://github.com/WolframRhodium/VapourSynth-BM3DCUDA
-
-    See BM3DFast for usage.
-    """
-    import warnings
-
-    warnings.warn(
-        "Deprecated in favor of vsdenoise.BM3DCuda.denoise!", DeprecationWarning
-    )
-
-    from vsdenoise import BM3DCuda as BM3D_IEW
-
-    return BM3D_IEW.denoise(clip, **kwargs)
-
-
-def BM3DCuda_RTC(clip: vs.VideoNode, **kwargs: Any) -> vs.VideoNode:
-    """
-    DEPRECATED: Use `vsdenoise.BM3DCPU.denoise` instead!
-    BM3D wrapper, similar to mvsfunc, but using `bm3dcuda_rtc`.
-    https://github.com/WolframRhodium/VapourSynth-BM3DCUDA
-
-    See BM3DFast for usage.
-    """
-    import warnings
-
-    warnings.warn(
-        "Deprecated in favor of vsdenoise.BM3DCudaRTC.denoise!", DeprecationWarning
-    )
-
-    from vsdenoise import BM3DCudaRTC as BM3D_IEW
-
-    return BM3D_IEW.denoise(clip, **kwargs)
-
-
-def BM3DFast(
-    clip: vs.VideoNode, algorithm: str = "bm3dcpu", **kwargs: Any
-) -> vs.VideoNode:
-    """
-    Generic BM3DCUDA wrapper. Modified from the mvsfunc wrapper, with the arguments
-    revised to match those supported by the BM3DCUDA functions.
-    https://github.com/WolframRhodium/VapourSynth-BM3DCUDA
-    """
-    match algorithm.lower():
-        case "bm3dcpu":
-            return BM3DCPU(clip, **kwargs)
-        case "bm3dcuda":
-            return BM3DCuda(clip, **kwargs)
-        case "bm3dcuda_rtc" | "bm3dcudartc":
-            return BM3DCuda_RTC(clip, **kwargs)
-        case _:
-            raise CustomValueError(
-                '"{algorithm}" is not a valid algorithm!',
-                BM3DFast,
-                reason='"{algorithm}" not in {algorithms}',
-                algorithm=algorithm,
-                algorithms=iter(["bm3dcpu", "bm3dcuda", "bm3dcuda_rtc", "bm3dcudartc"]),
-            )
-
-
 def magic_denoise(clip: vs.VideoNode) -> vs.VideoNode:
     """
     Clybius's magic denoise function.
@@ -256,16 +149,3 @@ def magic_denoise(clip: vs.VideoNode) -> vs.VideoNode:
         tbsize=3,
         ssystem=1,
     )
-
-
-# Aliases
-@copy_signature(magic_denoise)
-def MagicDenoise(*args: Any, **kwargs: Any) -> vs.VideoNode:
-    import warnings
-
-    warnings.warn(
-        "`MagicDenoise` has been deprecated in favor of `magic_denoise`!",
-        DeprecationWarning,
-    )
-
-    return magic_denoise(*args, **kwargs)

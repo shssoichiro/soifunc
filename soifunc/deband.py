@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from vsdeband import F3kdb
 from vsmasktools import dre_edgemask
-from vstools import InvalidVideoFormatError, check_variable, copy_signature, core, vs
+from vstools import InvalidVideoFormatError, check_variable, core, vs
 
 __all__ = [
     "retinex_deband",
@@ -18,11 +18,6 @@ def retinex_deband(
     """
     "medium" `threshold` in f3kdb is 48. I think that's a bit strong.
     16 might be a more sane starting point. Increase as needed.
-
-    `mask_threshold` determines how sensitive the mask is.
-    Lower values should preserve more detail.
-    It does not need to be manually scaled for bit-depth,
-    this function will do that automatically.
 
     This function does not add grain on its own. Use another function like
     `vsdeband.sized_grain` to do that.
@@ -47,16 +42,3 @@ def retinex_deband(
 
     deband = F3kdb().deband(clip, thr=(threshold << 2))
     return core.std.MaskedMerge(deband, clip, mask)
-
-
-# Aliases
-@copy_signature(retinex_deband)
-def RetinexDeband(**kwargs) -> vs.VideoNode:
-    import warnings
-
-    warnings.warn(
-        "`RetinexDeband` has been deprecated in favor of `retinex_deband`!",
-        DeprecationWarning,
-    )
-
-    return retinex_deband(**kwargs)
