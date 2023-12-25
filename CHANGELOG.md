@@ -1,5 +1,7 @@
-## Version next
+## Version 0.6.0
 
+- remove functions that were previously deprecated
+- fixes for compat with most recent dependency versions
 - expose SAD parameters in SQTGMC
 - fix some presets in SQTGMC, mainly use a not-stupid nnsize
 - remove dependency on havsfunc
