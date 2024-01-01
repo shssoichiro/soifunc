@@ -18,7 +18,7 @@ def good_resize(
     clip: vs.VideoNode,
     width: int,
     height: int,
-    gpu: bool = False,
+    gpu: bool | None = None,
 ) -> vs.VideoNode:
     """High quality resizing filter"""
     from vsaa import Nnedi3
