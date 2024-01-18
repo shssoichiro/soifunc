@@ -4,14 +4,51 @@ from dataclasses import dataclass
 from inspect import getfullargspec
 from typing import Any
 
-from vskernels import Scaler, ScalerT, Spline36
+from vsaa import Nnedi3
+from vskernels import KeepArScaler, Scaler, ScalerT, Spline36
 from vsscale import SSIM, GenericScaler
-from vstools import check_variable_format, join, vs
+from vstools import Dar, Sar, check_correct_subsampling, check_variable_format, join, vs
 
 __all__ = [
     "good_resize",
+    "GoodScaler",
     "HybridScaler",
 ]
+
+
+@dataclass
+class GoodScaler(KeepArScaler):
+    """High quality resizing filter based on opinionated defaults"""
+
+    def __init__(
+        self,
+        luma_scaler: ScalerT = SSIM,
+        chroma_scaler: ScalerT = Spline36,
+        **kwargs: Any,
+    ) -> None:
+        self.scaler = HybridScaler(
+            SSIM.from_param(luma_scaler), Spline36.from_param(chroma_scaler)
+        )
+        super().__init__(**kwargs)
+
+    @property
+    def kernel_radius(self) -> int:
+        return self.scaler.kernel_radius
+
+    def scale_function(  # type:ignore
+        self,
+        clip: vs.VideoNode,
+        width: int,
+        height: int,
+        shift: tuple[float, float] = (0, 0),
+        **kwargs: Any,
+    ) -> vs.VideoNode:
+        if (width, height) == (clip.width, clip.height):
+            return clip
+
+        return Nnedi3(opencl=kwargs.get("gpu", None), scaler=self.scaler).scale(
+            clip, width, height, shift
+        )
 
 
 def good_resize(
@@ -21,14 +58,8 @@ def good_resize(
     gpu: bool | None = None,
 ) -> vs.VideoNode:
     """High quality resizing filter"""
-    from vsaa import Nnedi3
-
-    if (width, height) == (clip.width, clip.height):
-        return clip
-
-    return Nnedi3(opencl=gpu, scaler=HybridScaler(SSIM, Spline36)).scale(
-        clip, width, height
-    )
+    """This is a convenience interface; use GoodScaler for more flexibility"""
+    return GoodScaler().scale(clip, width, height, gpu=gpu)
 
 
 @dataclass
