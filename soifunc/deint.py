@@ -3,6 +3,7 @@ from __future__ import annotations
 import multiprocessing
 from functools import partial
 from typing import Any, Optional, Sequence, Union, cast
+import warnings
 
 import vsdenoise
 from vsdenoise import DFTTest, fft3d
@@ -138,6 +139,11 @@ def SQTGMC(
 
     - device: Sets target OpenCL device.
     """
+    warnings.warn(
+        "`SQTGMC` is deprecated and will no longer be maintained. Please return to `havsfunc.QTGMC`.",
+        DeprecationWarning,
+    )
+
     assert check_variable(clip, SQTGMC)
 
     if input_type != 1 and tff is None:
