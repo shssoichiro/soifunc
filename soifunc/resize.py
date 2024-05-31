@@ -7,7 +7,7 @@ from typing import Any
 from vsaa import Nnedi3
 from vskernels import KeepArScaler, Scaler, ScalerT, Spline36
 from vsscale import SSIM, GenericScaler
-from vstools import Dar, Sar, check_correct_subsampling, check_variable_format, join, vs
+from vstools import check_variable_format, join, vs
 
 __all__ = [
     "good_resize",
