@@ -3,3 +3,4 @@
 poetry.lock
 /.mypy_cache
 *.pyc
+/.idea
