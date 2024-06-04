@@ -8,7 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"
-vapoursynth = ">=60"
+vapoursynth = "==66"
 vstools = ">=2.0.5"
 vsscale = ">=1.7.2"
 vsdenoise = ">=2.1.3"
@@ -18,10 +18,10 @@ vsdeband = ">=0.4.4"
 vskernels = "^3.1.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.12.0"
-isort = "^5.11.4"
-mypy = "^0.991"
+black = "^24.4.2"
+isort = "^5.13.2"
 pre-commit = "^2.21.0"
+pyright = "^1.1.365"
 
 [build-system]
 requires = ["poetry-core"]
@@ -29,3 +29,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.isort]
 profile = "black"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"

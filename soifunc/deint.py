@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import multiprocessing
+import warnings
 from functools import partial
 from typing import Any, Optional, Sequence, Union, cast
-import warnings
 
 import vsdenoise
 from vsdenoise import DFTTest, fft3d
@@ -316,9 +316,9 @@ def SQTGMC(
     else:
         bobbed = clip
 
-    search_clip = (
-        search_super
-    ) = b_vec1 = f_vec1 = b_vec2 = f_vec2 = b_vec3 = f_vec3 = None
+    search_clip = search_super = b_vec1 = f_vec1 = b_vec2 = f_vec2 = b_vec3 = f_vec3 = (
+        None
+    )
 
     cm_planes = [0, 1, 2] if chroma_motion and not is_gray else [0]
 
