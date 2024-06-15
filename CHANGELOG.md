@@ -1,3 +1,12 @@
+## Version 0.7.0
+
+- Add `anime` parameter to `good_resize`
+- Update `good_resize` kernels
+  - Live action will use EwaLanczos for luma upscaling, SSIM for luma downscaling, and Spline36 for chroma
+  - Anime will use Waifu2x for upscaling and sigmoid Catrom for downscaling
+- Fix `good_resize` `gpu` parameter to auto-detect by default
+- Deprecate `SQTGMC`. Please return to using `havsfunc.QTGMC` instead.
+
 ## Version 0.6.0
 
 - remove functions that were previously deprecated

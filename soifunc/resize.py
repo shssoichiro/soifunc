@@ -4,14 +4,20 @@ from dataclasses import dataclass
 from inspect import getfullargspec
 from typing import Any
 
-from vsaa import Nnedi3
-from vskernels import KeepArScaler, Scaler, ScalerT, Spline36
-from vsscale import SSIM, GenericScaler
+from vskernels import (
+    Catrom,
+    EwaLanczos,
+    Hermite,
+    KeepArScaler,
+    Scaler,
+    ScalerT,
+    Spline36,
+)
+from vsscale import SSIM, GenericScaler, Waifu2x
 from vstools import check_variable_format, join, vs
 
 __all__ = [
     "good_resize",
-    "GoodScaler",
     "HybridScaler",
 ]
 
@@ -22,13 +28,11 @@ class GoodScaler(KeepArScaler):
 
     def __init__(
         self,
-        luma_scaler: ScalerT = SSIM,
-        chroma_scaler: ScalerT = Spline36,
+        luma_scaler: ScalerT,
+        chroma_scaler: ScalerT,
         **kwargs: Any,
     ) -> None:
-        self.scaler = HybridScaler(
-            SSIM.from_param(luma_scaler), Spline36.from_param(chroma_scaler)
-        )
+        self.scaler = HybridScaler(luma_scaler, chroma_scaler)
         super().__init__(**kwargs)
 
     @property
@@ -46,20 +50,66 @@ class GoodScaler(KeepArScaler):
         if (width, height) == (clip.width, clip.height):
             return clip
 
-        return Nnedi3(opencl=kwargs.get("gpu", None), scaler=self.scaler).scale(
-            clip, width, height, shift
-        )
+        anime = kwargs.get("anime", False)
+        gpu = kwargs.get("gpu", None)
+        use_waifu2x = kwargs.get("use_waifu2x", None)
+
+        if anime and use_waifu2x:
+            return Waifu2x(cuda=gpu).scale(clip, width, height, shift)
+        return self.scaler.scale(clip, width, height, shift)
 
 
 def good_resize(
     clip: vs.VideoNode,
     width: int,
     height: int,
+    shift: tuple[float, float] = (0, 0),
     gpu: bool | None = None,
+    anime: bool = False,
+    use_waifu2x: bool = False,
 ) -> vs.VideoNode:
-    """High quality resizing filter"""
-    """This is a convenience interface; use GoodScaler for more flexibility"""
-    return GoodScaler().scale(clip, width, height, gpu=gpu)
+    """High quality resizing filter
+
+    Parameters
+    ----------
+    clip: VideoNode
+        Video clip to apply resizing to.
+    width: int
+        Target width to resize to.
+    height: int
+        Target height to resize to.
+    shift: tuple[float, float], optional
+        Horizontal and vertical amount of shift to apply.
+    gpu: bool, optional
+        Whether to allow usage of GPU for Waifu2x.
+        Defaults to None, which will auto-select based on available mlrt and hardware.
+    anime: bool, optional
+        Enables scalers that are better tuned toward anime.
+        Defaults to False.
+    use_waifu2x: bool, optional
+        Enables Waifu2x. Will fall back to EwaLanczos if this is False.
+        Defaults to False, since Waifu2x can be a pain to set up.
+    """
+
+    is_upscale = clip.width < width or clip.height < height
+    if anime:
+        if is_upscale and not use_waifu2x:
+            luma_scaler = EwaLanczos()
+            chroma_scaler = Spline36()
+        else:
+            # w2x handles upscaling differently, so we only need to specify the downscale kernel for it
+            luma_scaler = Catrom(sigmoid=True)
+            chroma_scaler = Catrom(sigmoid=True)
+    elif is_upscale:
+        luma_scaler = EwaLanczos()
+        chroma_scaler = Spline36()
+    else:
+        luma_scaler = SSIM(scaler=Hermite(linear=True))
+        chroma_scaler = Spline36()
+
+    return GoodScaler(luma_scaler, chroma_scaler).scale(
+        clip, width, height, shift=shift, gpu=gpu, anime=anime, use_waifu2x=use_waifu2x
+    )
 
 
 @dataclass
