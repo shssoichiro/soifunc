@@ -104,7 +104,7 @@ def good_resize(
         luma_scaler = EwaLanczos()
         chroma_scaler = Spline36()
     else:
-        luma_scaler = SSIM(scaler=Hermite(linear=True))
+        luma_scaler = SSIM()
         chroma_scaler = Spline36()
 
     return GoodScaler(luma_scaler, chroma_scaler).scale(
