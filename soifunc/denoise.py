@@ -2,13 +2,47 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
-from vsdenoise import DFTTest, FilterType
+import vsdenoise
+from vsdenoise import DFTTest, FilterType, Profile
 from vstools import core, vs
 
-__all__ = [
-    "MCDenoise",
-    "magic_denoise",
-]
+__all__ = ["MCDenoise", "magic_denoise", "hqbm3d"]
+
+
+def hqbm3d(
+    clip: vs.VideoNode,
+    luma_str: float = 0.45,
+    chroma_str: float = 0.4,
+    profile: Profile = Profile.FAST,
+) -> vs.VideoNode:
+    """
+    High-quality presets for motion compensated denoising.
+    Uses BM3D for luma and nl_means for chroma.
+
+    Sane strength values will typically be below 1.0.
+    """
+    mv = vsdenoise.MVTools.denoise(
+        clip,
+        tr=2,
+        thSAD=100,
+        block_size=32,
+        overlap=16,
+        range_conversion=3.5,
+        sad_mode=vsdenoise.SADMode.SPATIAL.same_recalc,
+        search=vsdenoise.SearchMode.DIAMOND,
+        motion=vsdenoise.MotionMode.HIGH_SAD,
+        prefilter=vsdenoise.Prefilter.DFTTEST(
+            clip,
+            sloc=[(0.0, 1.0), (0.2, 4.0), (0.35, 12.0), (1.0, 48.0)],
+            ssystem=1,
+            planes=0,
+        ),
+        planes=None,
+    )
+    bm3d = vsdenoise.BM3D.denoise(
+        clip, sigma=luma_str, tr=1, ref=mv, profile=profile, planes=0
+    )
+    return vsdenoise.nl_means(bm3d, strength=chroma_str, tr=1, ref=mv, planes=[1, 2])
 
 
 def MCDenoise(
