@@ -6,7 +6,7 @@ import vsdenoise
 from vsdenoise import DFTTest, FilterType, Profile
 from vstools import core, vs
 
-__all__ = ["MCDenoise", "magic_denoise", "hqbm3d"]
+__all__ = ["MCDenoise", "magic_denoise", "hqbm3d", "mc_dfttest"]
 
 
 def hqbm3d(
@@ -43,6 +43,23 @@ def hqbm3d(
         clip, sigma=luma_str, tr=1, ref=mv, profile=profile, planes=0
     )
     return vsdenoise.nl_means(bm3d, strength=chroma_str, tr=1, ref=mv, planes=[1, 2])
+
+
+def mc_dfttest(
+    clip: vs.VideoNode, thSAD: int = 75, noisy: bool = False
+) -> vs.VideoNode:
+    """
+    A motion-compensated denoiser using DFTTEST.
+    Even at the default `thSAD` of 75, it works well at eliminating noise.
+    Turn it up to 150 if you really need to nuke something.
+    It does an *okay* job at preserving details, but not nearly as good
+    as bm3d, so this is not recommended on high quality sources.
+    Use it to fix sources that are already dog water.
+    """
+    profile = vsdenoise.MVToolsPresets.NOISY if noisy else vsdenoise.MVToolsPresets.CMDE
+    pre = vsdenoise.Prefilter.DFTTEST(clip)
+    mc = vsdenoise.MVTools(pre, **profile)
+    return mc.degrain(ref=clip, thSAD=thSAD)
 
 
 def MCDenoise(
