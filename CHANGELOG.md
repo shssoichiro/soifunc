@@ -1,3 +1,9 @@
+## Version 0.8.0
+
+- Remove `SQTGMC`
+- Add `hqbm3d`
+- Fix dependency versions, including Vapoursynth
+
 ## Version 0.7.0
 
 - Add `anime` parameter to `good_resize`
