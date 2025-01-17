@@ -33,7 +33,7 @@ def hqbm3d(
         motion=vsdenoise.MotionMode.HIGH_SAD,
         prefilter=vsdenoise.Prefilter.DFTTEST(
             clip,
-            sloc=[(0.0, 1.0), (0.2, 4.0), (0.35, 12.0), (1.0, 48.0)],
+            slocation=[(0.0, 1.0), (0.2, 4.0), (0.35, 12.0), (1.0, 48.0)],
             ssystem=1,
             planes=0,
         ),
