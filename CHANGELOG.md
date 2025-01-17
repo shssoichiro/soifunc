@@ -1,3 +1,7 @@
+## Version 0.8.1
+
+- Fix an imports issue, whoops
+
 ## Version 0.8.0
 
 - Remove `SQTGMC`
