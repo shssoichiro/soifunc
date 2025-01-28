@@ -1,3 +1,7 @@
+## Version 0.8.2
+
+- Use CLAHE instead of Retinex for deband edge masking. Leaving function name unchanged for backwards compatibility.
+
 ## Version 0.8.1
 
 - Fix an imports issue, whoops
