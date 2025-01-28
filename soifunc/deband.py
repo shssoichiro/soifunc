@@ -34,7 +34,7 @@ def retinex_deband(
             "The format {format.name} is not supported! It must be an 8-16bit integer YUV bit format!",
         )
 
-    mask = dre_edgemask(clip)
+    mask = dre_edgemask.CLAHE(clip)
 
     if showmask:
         return mask
