@@ -55,6 +55,9 @@ def mc_dfttest(
     It does an *okay* job at preserving details, but not nearly as good
     as bm3d, so this is not recommended on high quality sources.
     Use it to fix sources that are already dog water.
+
+    The `noisy` parameter helps preserve more detail on high-quality but grainy sources,
+    but is slower.
     """
     profile = vsdenoise.MVToolsPresets.NOISY if noisy else vsdenoise.MVToolsPresets.CMDE
     pre = vsdenoise.Prefilter.DFTTEST(clip)
