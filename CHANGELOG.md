@@ -1,3 +1,7 @@
+## Version 0.9.0
+
+- [Breaking] Upgrade denoise functions for the vs-jetpack 0.3 update
+
 ## Version 0.8.2
 
 - Use CLAHE instead of Retinex for deband edge masking. Leaving function name unchanged for backwards compatibility.
