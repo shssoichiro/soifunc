@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable, Optional
 
 import vsdenoise
-from vsdenoise import DFTTest, FilterType, Profile
+from vsdenoise import DFTTest, FilterType, Profile, mc_degrain
 from vstools import core, vs
 
 __all__ = ["MCDenoise", "magic_denoise", "hqbm3d", "mc_dfttest"]
@@ -21,6 +21,7 @@ def hqbm3d(
 
     Sane strength values will typically be below 1.0.
     """
+    # FIXME: Surely this is broken too...
     mv = vsdenoise.MVTools.denoise(
         clip,
         tr=2,
@@ -60,10 +61,13 @@ def mc_dfttest(
     """
     # On Discord they said "Use SAD for denoising and Coherence for everything else".
     # TODO: Do we need to tweak anything for the `noisy` param?
-    profile = vsdenoise.MVToolsPresets.HQ_SAD
-    pre = vsdenoise.Prefilter.DFTTEST(clip)
-    mc = vsdenoise.MVTools(pre, **profile)
-    return mc.degrain(ref=clip, thSAD=thSAD)
+    # TODO: Maybe this function can be deprecated? Bro idk.
+    return mc_degrain(
+        clip,
+        prefilter=vsdenoise.Prefilter.DFTTEST,
+        preset=vsdenoise.MVToolsPresets.HQ_SAD,
+        thsad=thSAD,
+    )
 
 
 def MCDenoise(
