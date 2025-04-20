@@ -21,21 +21,18 @@ def hqbm3d(
 
     Sane strength values will typically be below 1.0.
     """
-    # FIXME: Surely this is broken too...
-    mv = vsdenoise.MVTools.denoise(
+    mv = mc_degrain(
         clip,
+        preset=vsdenoise.MVToolsPresets.HQ_SAD,
         tr=2,
-        thSAD=100,
-        block_size=32,
-        overlap=16,
-        range_conversion=3.5,
-        sad_mode=vsdenoise.SADMode.SPATIAL.same_recalc,
-        search=vsdenoise.SearchMode.DIAMOND,
-        motion=vsdenoise.MotionMode.HIGH_SAD,
+        thsad=100,
+        refine=3,
+        blksize=select_block_size(clip),
         prefilter=vsdenoise.Prefilter.DFTTEST(
             clip,
             slocation=[(0.0, 1.0), (0.2, 4.0), (0.35, 12.0), (1.0, 48.0)],
             ssystem=1,
+            full_range=3.5,
             planes=0,
         ),
         planes=None,
@@ -59,15 +56,25 @@ def mc_dfttest(
     The `noisy` parameter helps preserve more detail on high-quality but grainy sources,
     but is slower.
     """
-    # On Discord they said "Use SAD for denoising and Coherence for everything else".
     # TODO: Do we need to tweak anything for the `noisy` param?
-    # TODO: Maybe this function can be deprecated? Bro idk.
     return mc_degrain(
         clip,
         prefilter=vsdenoise.Prefilter.DFTTEST,
         preset=vsdenoise.MVToolsPresets.HQ_SAD,
         thsad=thSAD,
+        tr=2,
+        refine=3,
+        blksize=select_block_size(clip),
     )
+
+def select_block_size(clip: vs.VideoNode):
+    if clip.width >= 1920 or clip.height >= 1080:
+        return 64
+    if clip.width >= 1600 or clip.height >= 900:
+        return 48
+    if clip.width >= 1280 or clip.height >= 720:
+        return 32
+    return 16
 
 
 def MCDenoise(
