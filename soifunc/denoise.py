@@ -58,7 +58,9 @@ def mc_dfttest(
     The `noisy` parameter helps preserve more detail on high-quality but grainy sources,
     but is slower.
     """
-    profile = vsdenoise.MVToolsPresets.NOISY if noisy else vsdenoise.MVToolsPresets.CMDE
+    # On Discord they said "Use SAD for denoising and Coherence for everything else".
+    # TODO: Do we need to tweak anything for the `noisy` param?
+    profile = vsdenoise.MVToolsPresets.HQ_SAD
     pre = vsdenoise.Prefilter.DFTTEST(clip)
     mc = vsdenoise.MVTools(pre, **profile)
     return mc.degrain(ref=clip, thSAD=thSAD)
