@@ -1,3 +1,7 @@
+## Version 0.9.1
+
+- Fix denoisers for resolutions below 1080p
+
 ## Version 0.9.0
 
 - [Breaking] Upgrade denoise functions for the vs-jetpack 0.3 update
