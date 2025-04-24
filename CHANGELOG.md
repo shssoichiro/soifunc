@@ -1,3 +1,7 @@
+## Version 0.9.2
+
+- Refine block size selection
+
 ## Version 0.9.1
 
 - Fix denoisers for resolutions below 1080p

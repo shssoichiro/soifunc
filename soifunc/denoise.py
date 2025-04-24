@@ -71,9 +71,9 @@ def mc_dfttest(
 
 
 def select_block_size(clip: vs.VideoNode):
-    if clip.width >= 1920 or clip.height >= 1080:
+    if clip.width * clip.height >= 1920 * 800:
         return 64
-    if clip.width >= 1280 or clip.height >= 720:
+    if clip.width * clip.height >= 1280 * 720:
         return 32
     return 16
 
