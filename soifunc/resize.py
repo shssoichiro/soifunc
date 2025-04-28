@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from inspect import getfullargspec
 from typing import Any
 
+from vsaa.antialiasers.nnedi3 import Nnedi3SS
 from vskernels import (
     Catrom,
     EwaLanczos,
@@ -13,50 +14,13 @@ from vskernels import (
     ScalerT,
     Spline36,
 )
-from vsscale import SSIM, GenericScaler, Waifu2x
-from vstools import check_variable_format, join, vs
+from vsscale import SSIM, ArtCNN, GenericScaler, Waifu2x
+from vstools import check_variable_format, is_gpu_available, join, vs
 
 __all__ = [
     "good_resize",
     "HybridScaler",
 ]
-
-
-@dataclass
-class GoodScaler(KeepArScaler):
-    """High quality resizing filter based on opinionated defaults"""
-
-    def __init__(
-        self,
-        luma_scaler: ScalerT,
-        chroma_scaler: ScalerT,
-        **kwargs: Any,
-    ) -> None:
-        self.scaler = HybridScaler(luma_scaler, chroma_scaler)
-        super().__init__(**kwargs)
-
-    @property
-    def kernel_radius(self) -> int:
-        return self.scaler.kernel_radius
-
-    def scale_function(  # type:ignore
-        self,
-        clip: vs.VideoNode,
-        width: int,
-        height: int,
-        shift: tuple[float, float] = (0, 0),
-        **kwargs: Any,
-    ) -> vs.VideoNode:
-        if (width, height) == (clip.width, clip.height):
-            return clip
-
-        anime = kwargs.get("anime", False)
-        gpu = kwargs.get("gpu", None)
-        use_waifu2x = kwargs.get("use_waifu2x", None)
-
-        if anime and use_waifu2x:
-            return Waifu2x(cuda=gpu).scale(clip, width, height, shift)
-        return self.scaler.scale(clip, width, height, shift)
 
 
 def good_resize(
@@ -66,7 +30,6 @@ def good_resize(
     shift: tuple[float, float] = (0, 0),
     gpu: bool | None = None,
     anime: bool = False,
-    use_waifu2x: bool = False,
 ) -> vs.VideoNode:
     """High quality resizing filter
 
@@ -81,34 +44,33 @@ def good_resize(
     shift: tuple[float, float], optional
         Horizontal and vertical amount of shift to apply.
     gpu: bool, optional
-        Whether to allow usage of GPU for Waifu2x.
+        Whether to allow usage of GPU for ArtCNN.
         Defaults to None, which will auto-select based on available mlrt and hardware.
     anime: bool, optional
         Enables scalers that are better tuned toward anime.
         Defaults to False.
-    use_waifu2x: bool, optional
-        Enables Waifu2x. Will fall back to EwaLanczos if this is False.
-        Defaults to False, since Waifu2x can be a pain to set up.
     """
 
+    if gpu is None:
+        gpu = is_gpu_available()
+
     is_upscale = clip.width < width or clip.height < height
+    chroma_scaler = Spline36()
     if anime:
-        if is_upscale and not use_waifu2x:
-            luma_scaler = EwaLanczos()
-            chroma_scaler = Spline36()
+        if is_upscale:
+            if gpu:
+                luma_scaler = ArtCNN()
+            else:
+                luma_scaler = Nnedi3SS(scaler=Hermite(sigmoid=True))
         else:
-            # w2x handles upscaling differently, so we only need to specify the downscale kernel for it
-            luma_scaler = Catrom(sigmoid=True)
-            chroma_scaler = Catrom(sigmoid=True)
+            luma_scaler = Hermite(sigmoid=True)
     elif is_upscale:
         luma_scaler = EwaLanczos()
-        chroma_scaler = Spline36()
     else:
         luma_scaler = SSIM()
-        chroma_scaler = Spline36()
 
-    return GoodScaler(luma_scaler, chroma_scaler).scale(
-        clip, width, height, shift=shift, gpu=gpu, anime=anime, use_waifu2x=use_waifu2x
+    return HybridScaler(luma_scaler, chroma_scaler).scale(
+        clip, width, height, shift=shift
     )
 
 

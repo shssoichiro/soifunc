@@ -1,3 +1,9 @@
+## Version 0.10.0
+
+- [Breaking] Remove the `use_waifu2x` parameter from `good_resize` (use the `gpu` parameter instead--this will auto-detect by default)
+- Rework defaults for anime mode in `good_resize`
+- Simplify `good_resize` code
+
 ## Version 0.9.2
 
 - Refine block size selection
