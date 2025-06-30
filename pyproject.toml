@@ -9,12 +9,12 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.12,<4.0"
 vapoursynth = ">=68"
-vsjetpack = "^0.3.4"
+vsjetpack = "^0.4.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^24.4.2"
-isort = "^5.13.2"
-pre-commit = "^2.21.0"
+black = "^25.1.0"
+isort = "^6.0.1"
+pre-commit = "^4.2.0"
 
 [build-system]
 requires = ["poetry-core"]

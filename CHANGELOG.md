@@ -1,3 +1,9 @@
+# Changelog
+
+## Version 0.10.1
+
+- Use nnedi3 for upscaling by default as it is slightly sharper and has less ringing than EwaLanczos
+
 ## Version 0.10.0
 
 - [Breaking] Remove the `use_waifu2x` parameter from `good_resize` (use the `gpu` parameter instead--this will auto-detect by default)

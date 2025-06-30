@@ -6,16 +6,13 @@ from typing import Any
 
 from vsaa.antialiasers.nnedi3 import Nnedi3SS
 from vskernels import (
-    Catrom,
-    EwaLanczos,
     Hermite,
-    KeepArScaler,
     Scaler,
     ScalerT,
     Spline36,
 )
-from vsscale import SSIM, ArtCNN, GenericScaler, Waifu2x
-from vstools import check_variable_format, is_gpu_available, join, vs
+from vsscale import SSIM, ArtCNN, GenericScaler
+from vstools import check_variable_format, inject_self, is_gpu_available, join, vs
 
 __all__ = [
     "good_resize",
@@ -65,7 +62,7 @@ def good_resize(
         else:
             luma_scaler = Hermite(sigmoid=True)
     elif is_upscale:
-        luma_scaler = EwaLanczos()
+        luma_scaler = Nnedi3SS(scaler=SSIM())
     else:
         luma_scaler = SSIM()
 
@@ -85,7 +82,7 @@ class HybridScaler(GenericScaler):
         self._luma = Scaler.ensure_obj(self.luma_scaler)
         self._chroma = Scaler.ensure_obj(self.chroma_scaler)
 
-    @property
+    @inject_self.cached.property
     def kernel_radius(self) -> int:
         return self._luma.kernel_radius
 
