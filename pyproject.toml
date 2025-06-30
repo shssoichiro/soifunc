@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "soifunc"
-version = "0.10.0"
+version = "0.10.1"
 description = "Soichiro's VapourSynth Functions Collection"
 authors = ["Josh Holmer <jholmer.in@gmail.com>"]
 license = "MIT"
