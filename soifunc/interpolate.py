@@ -77,24 +77,27 @@ def decimation_fixer(clip: vs.VideoNode, cycle: int, offset: int = 0) -> vs.Vide
         width=next_multiple_of(64, width),
         height=next_multiple_of(64, height),
     )
+    doubled = vsmlrt.RIFE(
+        clip,
+        model=vsmlrt.RIFEModel.v4_25_heavy,
+        # TODO: Make this handle more platforms other than just the machines I run on
+        backend=(
+            vsmlrt.Backend.ORT_DML()
+            if platform.system() == "Windows"
+            else vsmlrt.Backent.TRT_RTX()
+        ),
+    )
 
     clip_len = clip.num_frames
     frame_to_restore = offset
+    source_frame = offset - 1
     while frame_to_restore < clip_len:
         if frame_to_restore > 0:
-            segment = clip[frame_to_restore - 1 : frame_to_restore + 1]
-            segment = vsmlrt.RIFE(
-                segment,
-                model=vsmlrt.RIFEModel.v4_25_heavy,
-                # TODO: Make this handle more platforms other than just the machines I run on
-                backend=(
-                    vsmlrt.Backend.ORT_DML()
-                    if platform.system() == "Windows"
-                    else vsmlrt.Backent.TRT_RTX()
-                ),
-            )
-            clip = clip[:frame_to_restore] + segment[1] + clip[frame_to_restore:]
+            interp_frame = source_frame * 2 + 1
+            interp = doubled[interp_frame]
+            clip = clip[:frame_to_restore] + interp + clip[frame_to_restore:]
         frame_to_restore += cycle
+        source_frame += cycle - 1
     clip = clip.std.AssumeFPS(
         fpsnum=clip.fps.numerator * cycle, fpsden=clip.fps.denominator * (cycle - 1)
     )
