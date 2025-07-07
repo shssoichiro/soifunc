@@ -5,9 +5,7 @@ import platform
 import vstools
 from vstools import vs
 
-__all__ = [
-    "rate_doubler",
-]
+__all__ = ["rate_doubler", "decimation_fixer"]
 
 
 def rate_doubler(clip: vs.VideoNode) -> vs.VideoNode:
