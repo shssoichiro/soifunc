@@ -62,13 +62,15 @@ def decimation_fixer(clip: vs.VideoNode, cycle: int, offset: int = 0) -> vs.Vide
     """
     import vsmlrt
 
-    if offset >= cycle:
-        raise Exception("offset must be less than cycle")
+    if offset >= cycle - 1:
+        raise Exception("offset must be less than cycle - 1")
     if cycle <= 0:
         raise Exception("cycle must be greater than zero")
 
     width = clip.width
     height = clip.height
+    fps = clip.fps
+    input_cycle = cycle - 1
     matrix = vstools.Matrix.from_video(clip)
     transfer = vstools.Transfer.from_video(clip)
     primaries = vstools.Primaries.from_video(clip)
@@ -88,22 +90,27 @@ def decimation_fixer(clip: vs.VideoNode, cycle: int, offset: int = 0) -> vs.Vide
         ),
     )
 
-    clip_len = clip.num_frames
-    frame_to_restore = offset
-    source_frame = offset - 1
-    while frame_to_restore < clip_len:
-        if frame_to_restore > 0:
-            interp_frame = source_frame * 2 + 1
-            interp = doubled[interp_frame]
-            clip = clip[:frame_to_restore] + interp + clip[frame_to_restore:]
-        frame_to_restore += cycle
-        source_frame += cycle - 1
-    clip = clip.std.AssumeFPS(
-        fpsnum=clip.fps.numerator * cycle / (cycle - 1), fpsden=clip.fps.denominator
+    # blank clip with same vid info as input
+    out_clip = clip[:0]
+    # This is the frame after our insertion point
+    src_frame = offset
+    last_src_frame = 0
+    # This is the frame we want to grab from the doubled clip
+    doub_frame = offset * 2 + 1
+    while src_frame < clip.num_frames:
+        if src_frame > 0:
+            interp = doubled[doub_frame]
+            out_clip = out_clip + clip[last_src_frame:src_frame] + interp
+        last_src_frame = src_frame
+        src_frame += input_cycle
+        doub_frame += input_cycle * 2
+    out_clip += clip[last_src_frame:]
+    out_clip = clip.std.AssumeFPS(
+        fpsnum=fps.numerator * cycle // input_cycle, fpsden=fps.denominator
     )
 
     # TODO: Handle other chroma samplings
-    clip = clip.resize.Bicubic(
+    out_clip = out_clip.resize.Bicubic(
         format=vs.YUV420P16,
         width=width,
         height=height,
@@ -111,7 +118,7 @@ def decimation_fixer(clip: vs.VideoNode, cycle: int, offset: int = 0) -> vs.Vide
         transfer=transfer,
         primaries=primaries,
     )
-    return clip
+    return out_clip
 
 
 def next_multiple_of(multiple: int, param: int) -> int:
