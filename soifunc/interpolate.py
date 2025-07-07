@@ -99,7 +99,7 @@ def decimation_fixer(clip: vs.VideoNode, cycle: int, offset: int = 0) -> vs.Vide
         frame_to_restore += cycle
         source_frame += cycle - 1
     clip = clip.std.AssumeFPS(
-        fpsnum=clip.fps.numerator * cycle, fpsden=clip.fps.denominator * (cycle - 1)
+        fpsnum=clip.fps.numerator * cycle / (cycle - 1), fpsden=clip.fps.denominator
     )
 
     # TODO: Handle other chroma samplings
