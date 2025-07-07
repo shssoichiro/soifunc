@@ -1,3 +1,4 @@
 from .deband import *  # noqa: F401, F403
 from .denoise import *  # noqa: F401, F403
+from .interpolate import *  # noqa: F401, F403
 from .resize import *  # noqa: F401, F403
