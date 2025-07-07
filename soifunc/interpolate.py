@@ -90,22 +90,24 @@ def decimation_fixer(clip: vs.VideoNode, cycle: int, offset: int = 0) -> vs.Vide
         ),
     )
 
-    # blank clip with same vid info as input
-    out_clip = clip[:0]
+    out_clip = None
     # This is the frame after our insertion point
     src_frame = offset
     last_src_frame = 0
     # This is the frame we want to grab from the doubled clip
-    doub_frame = offset * 2 + 1
+    doub_frame = offset * 2 - 1
     while src_frame < clip.num_frames:
         if src_frame > 0:
             interp = doubled[doub_frame]
-            out_clip = out_clip + clip[last_src_frame:src_frame] + interp
+            if out_clip is None:
+                out_clip = clip[last_src_frame:src_frame] + interp
+            else:
+                out_clip = out_clip + clip[last_src_frame:src_frame] + interp
         last_src_frame = src_frame
         src_frame += input_cycle
         doub_frame += input_cycle * 2
     out_clip += clip[last_src_frame:]
-    out_clip = clip.std.AssumeFPS(
+    out_clip = out_clip.std.AssumeFPS(
         fpsnum=fps.numerator * cycle // input_cycle, fpsden=fps.denominator
     )
 
