@@ -39,7 +39,7 @@ def hqbm3d(
         planes=None,
     )
     out = bm3d(clip, sigma=luma_str, tr=1, ref=mv, profile=profile, planes=0)
-    return vsdenoise.nl_means(out, strength=chroma_str, tr=1, ref=mv, planes=[1, 2])
+    return vsdenoise.nl_means(out, h=chroma_str, tr=1, ref=mv, planes=[1, 2])
 
 
 def mc_dfttest(

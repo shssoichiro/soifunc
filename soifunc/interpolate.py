@@ -3,12 +3,15 @@ from __future__ import annotations
 import platform
 
 import vstools
+from vsmlrt import backendT
 from vstools import vs
 
 __all__ = ["rate_doubler", "decimation_fixer"]
 
 
-def rate_doubler(clip: vs.VideoNode, multi: int = 2) -> vs.VideoNode:
+def rate_doubler(
+    clip: vs.VideoNode, multi: int = 2, backend: backendT | None = None
+) -> vs.VideoNode:
     """
     A utility to scale the framerate of a video via frame interpolation.
 
@@ -22,6 +25,7 @@ def rate_doubler(clip: vs.VideoNode, multi: int = 2) -> vs.VideoNode:
     matrix = vstools.Matrix.from_video(clip)
     transfer = vstools.Transfer.from_video(clip)
     primaries = vstools.Primaries.from_video(clip)
+    clip = clip.misc.SCDetect(clip)
     clip = clip.resize.Bicubic(
         format=vs.RGBS,
         width=next_multiple_of(64, width),
@@ -31,13 +35,16 @@ def rate_doubler(clip: vs.VideoNode, multi: int = 2) -> vs.VideoNode:
         clip,
         multi=multi,
         model=vsmlrt.RIFEModel.v4_25_heavy,
-        # TODO: Make this handle more platforms other than just the machines I run on
-        # Why are we overriding this anyway? Because running ML stuff on AMD on Windows sucks hard.
+        # Why these defaults? Because running ML stuff on AMD on Windows sucks hard.
         # Trial and error led me to finally find that ORT_DML works.
         backend=(
-            vsmlrt.Backend.ORT_DML()
-            if platform.system() == "Windows"
-            else vsmlrt.Backend.TRT_RTX()
+            backend
+            if backend
+            else (
+                vsmlrt.Backend.ORT_DML()
+                if platform.system() == "Windows"
+                else vsmlrt.Backend.TRT_RTX()
+            )
         ),
     )
     # TODO: Handle other chroma samplings
@@ -52,7 +59,9 @@ def rate_doubler(clip: vs.VideoNode, multi: int = 2) -> vs.VideoNode:
     return clip
 
 
-def decimation_fixer(clip: vs.VideoNode, cycle: int, offset: int = 0) -> vs.VideoNode:
+def decimation_fixer(
+    clip: vs.VideoNode, cycle: int, offset: int = 0, backend: backendT | None = None
+) -> vs.VideoNode:
     """
     Attempts to interpolate frames that were removed by bad decimation.
     Only works with static decimation cycles.
@@ -77,6 +86,7 @@ def decimation_fixer(clip: vs.VideoNode, cycle: int, offset: int = 0) -> vs.Vide
     matrix = vstools.Matrix.from_video(clip)
     transfer = vstools.Transfer.from_video(clip)
     primaries = vstools.Primaries.from_video(clip)
+    clip = clip.misc.SCDetect(clip)
     clip = clip.resize.Bicubic(
         format=vs.RGBS,
         width=next_multiple_of(64, width),
@@ -85,11 +95,14 @@ def decimation_fixer(clip: vs.VideoNode, cycle: int, offset: int = 0) -> vs.Vide
     doubled = vsmlrt.RIFE(
         clip,
         model=vsmlrt.RIFEModel.v4_25_heavy,
-        # TODO: Make this handle more platforms other than just the machines I run on
         backend=(
-            vsmlrt.Backend.ORT_DML()
-            if platform.system() == "Windows"
-            else vsmlrt.Backend.TRT_RTX()
+            backend
+            if backend
+            else (
+                vsmlrt.Backend.ORT_DML()
+                if platform.system() == "Windows"
+                else vsmlrt.Backend.TRT_RTX()
+            )
         ),
     )
 
