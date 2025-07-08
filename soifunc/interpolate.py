@@ -25,7 +25,7 @@ def rate_doubler(
     matrix = vstools.Matrix.from_video(clip)
     transfer = vstools.Transfer.from_video(clip)
     primaries = vstools.Primaries.from_video(clip)
-    clip = clip.misc.SCDetect(clip)
+    clip = clip.misc.SCDetect()
     clip = clip.resize.Bicubic(
         format=vs.RGBS,
         width=next_multiple_of(64, width),
@@ -86,7 +86,7 @@ def decimation_fixer(
     matrix = vstools.Matrix.from_video(clip)
     transfer = vstools.Transfer.from_video(clip)
     primaries = vstools.Primaries.from_video(clip)
-    clip = clip.misc.SCDetect(clip)
+    clip = clip.misc.SCDetect()
     clip = clip.resize.Bicubic(
         format=vs.RGBS,
         width=next_multiple_of(64, width),
