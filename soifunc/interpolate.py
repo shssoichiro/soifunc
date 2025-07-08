@@ -8,9 +8,9 @@ from vstools import vs
 __all__ = ["rate_doubler", "decimation_fixer"]
 
 
-def rate_doubler(clip: vs.VideoNode) -> vs.VideoNode:
+def rate_doubler(clip: vs.VideoNode, multi: int = 2) -> vs.VideoNode:
     """
-    A utility to double the framerate of a video via frame interpolation.
+    A utility to scale the framerate of a video via frame interpolation.
 
     Probably shouldn't just go spraying this everywhere,
     it's more for fun and science than anything.
@@ -29,6 +29,7 @@ def rate_doubler(clip: vs.VideoNode) -> vs.VideoNode:
     )
     clip = vsmlrt.RIFE(
         clip,
+        multi=multi,
         model=vsmlrt.RIFEModel.v4_25_heavy,
         # TODO: Make this handle more platforms other than just the machines I run on
         backend=(
