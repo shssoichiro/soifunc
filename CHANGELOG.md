@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.11.0
+
+- [Breaking] Update for vs-jetpack 0.5
+- [Feature] Add some utilities for interpolating frames
+
 ## Version 0.10.1
 
 - Use nnedi3 for upscaling by default as it is slightly sharper and has less ringing than EwaLanczos

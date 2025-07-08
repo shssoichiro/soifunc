@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from vsdeband import F3kdb
+from vsdeband import f3k_deband
 from vsmasktools import dre_edgemask
 from vstools import InvalidVideoFormatError, check_variable, core, vs
 
@@ -19,7 +19,7 @@ def retinex_deband(
     16 might be a more sane starting point. Increase as needed.
 
     This function does not add grain on its own. Use another function like
-    `vsdeband.sized_grain` to do that.
+    `vsdeband.AddNoise` to do that.
     """
     assert check_variable(clip, retinex_deband)
 
@@ -39,5 +39,5 @@ def retinex_deband(
     if showmask:
         return mask
 
-    deband = F3kdb().deband(clip, thr=(threshold << 2))
+    deband = f3k_deband(clip, thr=(threshold << 2))
     return core.std.MaskedMerge(deband, clip, mask)

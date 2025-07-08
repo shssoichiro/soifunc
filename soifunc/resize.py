@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from inspect import getfullargspec
 from typing import Any
 
-from vsaa.antialiasers.nnedi3 import Nnedi3SS
+from vsaa.deinterlacers import NNEDI3
 from vskernels import (
     Hermite,
     Scaler,
-    ScalerT,
+    ScalerLike,
     Spline36,
 )
 from vsscale import SSIM, ArtCNN, GenericScaler
@@ -58,11 +58,11 @@ def good_resize(
             if gpu:
                 luma_scaler = ArtCNN()
             else:
-                luma_scaler = Nnedi3SS(scaler=Hermite(sigmoid=True))
+                luma_scaler = NNEDI3(scaler=Hermite(sigmoid=True))
         else:
             luma_scaler = Hermite(sigmoid=True)
     elif is_upscale:
-        luma_scaler = Nnedi3SS(scaler=SSIM())
+        luma_scaler = NNEDI3(scaler=SSIM())
     else:
         luma_scaler = SSIM()
 
@@ -73,8 +73,8 @@ def good_resize(
 
 @dataclass
 class HybridScaler(GenericScaler):
-    luma_scaler: ScalerT
-    chroma_scaler: ScalerT
+    luma_scaler: ScalerLike
+    chroma_scaler: ScalerLike
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -82,7 +82,7 @@ class HybridScaler(GenericScaler):
         self._luma = Scaler.ensure_obj(self.luma_scaler)
         self._chroma = Scaler.ensure_obj(self.chroma_scaler)
 
-    @inject_self.cached.property
+    @Scaler.cached_property
     def kernel_radius(self) -> int:
         return self._luma.kernel_radius
 
@@ -106,7 +106,7 @@ class HybridScaler(GenericScaler):
         return join(luma, chroma)
 
 
-def _get_scaler(scaler: ScalerT, **kwargs: Any) -> Scaler:
+def _get_scaler(scaler: ScalerLike, **kwargs: Any) -> Scaler:
     scaler_cls = Scaler.from_param(scaler, _get_scaler)
 
     args = getfullargspec(scaler_cls).args

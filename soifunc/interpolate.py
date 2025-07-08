@@ -32,10 +32,12 @@ def rate_doubler(clip: vs.VideoNode, multi: int = 2) -> vs.VideoNode:
         multi=multi,
         model=vsmlrt.RIFEModel.v4_25_heavy,
         # TODO: Make this handle more platforms other than just the machines I run on
+        # Why are we overriding this anyway? Because running ML stuff on AMD on Windows sucks hard.
+        # Trial and error led me to finally find that ORT_DML works.
         backend=(
             vsmlrt.Backend.ORT_DML()
             if platform.system() == "Windows"
-            else vsmlrt.Backent.TRT_RTX()
+            else vsmlrt.Backend.TRT_RTX()
         ),
     )
     # TODO: Handle other chroma samplings
@@ -87,7 +89,7 @@ def decimation_fixer(clip: vs.VideoNode, cycle: int, offset: int = 0) -> vs.Vide
         backend=(
             vsmlrt.Backend.ORT_DML()
             if platform.system() == "Windows"
-            else vsmlrt.Backent.TRT_RTX()
+            else vsmlrt.Backend.TRT_RTX()
         ),
     )
 

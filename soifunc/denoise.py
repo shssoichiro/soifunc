@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable, Optional
 
 import vsdenoise
-from vsdenoise import DFTTest, FilterType, Profile, mc_degrain
+from vsdenoise import DFTTest, bm3d, mc_degrain
 from vstools import core, vs
 
 __all__ = ["MCDenoise", "magic_denoise", "hqbm3d", "mc_dfttest"]
@@ -13,7 +13,7 @@ def hqbm3d(
     clip: vs.VideoNode,
     luma_str: float = 0.45,
     chroma_str: float = 0.4,
-    profile: Profile = Profile.FAST,
+    profile: bm3d.Profile = bm3d.Profile.FAST,
 ) -> vs.VideoNode:
     """
     High-quality presets for motion compensated denoising.
@@ -24,24 +24,22 @@ def hqbm3d(
     blksize = select_block_size(clip)
     mv = mc_degrain(
         clip,
-        preset=vsdenoise.MVToolsPresets.HQ_SAD,
+        preset=vsdenoise.MVToolsPreset.HQ_SAD,
         tr=2,
         thsad=100,
         refine=3 if blksize > 16 else 2,
         blksize=blksize,
         prefilter=vsdenoise.Prefilter.DFTTEST(
             clip,
-            slocation=[(0.0, 1.0), (0.2, 4.0), (0.35, 12.0), (1.0, 48.0)],
+            sloc=[(0.0, 1.0), (0.2, 4.0), (0.35, 12.0), (1.0, 48.0)],
             ssystem=1,
             full_range=3.5,
             planes=0,
         ),
         planes=None,
     )
-    bm3d = vsdenoise.BM3D.denoise(
-        clip, sigma=luma_str, tr=1, ref=mv, profile=profile, planes=0
-    )
-    return vsdenoise.nl_means(bm3d, strength=chroma_str, tr=1, ref=mv, planes=[1, 2])
+    out = bm3d(clip, sigma=luma_str, tr=1, ref=mv, profile=profile, planes=0)
+    return vsdenoise.nl_means(out, strength=chroma_str, tr=1, ref=mv, planes=[1, 2])
 
 
 def mc_dfttest(
@@ -62,7 +60,7 @@ def mc_dfttest(
     return mc_degrain(
         clip,
         prefilter=vsdenoise.Prefilter.DFTTEST,
-        preset=vsdenoise.MVToolsPresets.HQ_SAD,
+        preset=vsdenoise.MVToolsPreset.HQ_SAD,
         thsad=thSAD,
         tr=2,
         refine=3 if blksize > 16 else 2,
@@ -201,12 +199,12 @@ def magic_denoise(clip: vs.VideoNode) -> vs.VideoNode:
         thscd1=300,
     )
 
-    return DFTTest.denoise(
+    return DFTTest().denoise(
         clip,
         sloc=[(0.0, 0.8), (0.06, 1.1), (0.12, 1.0), (1.0, 1.0)],
         pmax=1000000,
         pmin=1.25,
-        ftype=FilterType.MULT_RANGE,
+        ftype=DFTTest.FilterType.MULT_RANGE,
         tbsize=3,
         ssystem=1,
     )
