@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import platform
+from typing import TYPE_CHECKING
 
 import vstools
-from vsmlrt import backendT
 from vstools import vs
+
+if TYPE_CHECKING:
+    from vsmlrt import backendT
 
 __all__ = ["rate_doubler", "decimation_fixer"]
 
@@ -43,7 +46,7 @@ def rate_doubler(
             else (
                 vsmlrt.Backend.ORT_DML()
                 if platform.system() == "Windows"
-                else vsmlrt.Backend.TRT_RTX()
+                else vsmlrt.Backend.TRT()
             )
         ),
     )
@@ -101,7 +104,7 @@ def decimation_fixer(
             else (
                 vsmlrt.Backend.ORT_DML()
                 if platform.system() == "Windows"
-                else vsmlrt.Backend.TRT_RTX()
+                else vsmlrt.Backend.TRT()
             )
         ),
     )

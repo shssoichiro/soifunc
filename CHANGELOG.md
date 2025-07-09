@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.11.1
+
+- Change the default ML runtime, since vs-mlrt on AUR doesn't provide TRT_RTX and I don't feel like figuring out how to add it
+- Lazy import `BackendT` so that vs-mlrt is actually an optional dependency
+
 ## Version 0.11.0
 
 - [Breaking] Update for vs-jetpack 0.5
