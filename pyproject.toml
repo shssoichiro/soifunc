@@ -9,7 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.12,<4.0"
 vapoursynth = ">=68"
-vsjetpack = "^0.5.0"
+vsjetpack = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.1.0"
