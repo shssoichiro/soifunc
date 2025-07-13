@@ -15,6 +15,9 @@ def retinex_deband(
     showmask: bool = False,
 ) -> vs.VideoNode:
     """
+    Debanding using a contrast-adaptive edge mask to preserve details
+    even in dark areas.
+    
     "medium" `threshold` in f3kdb is 48. I think that's a bit strong.
     16 might be a more sane starting point. Increase as needed.
 
