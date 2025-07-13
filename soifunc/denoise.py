@@ -52,8 +52,9 @@ def mc_dfttest(
     It does an *okay* job at preserving details, but not nearly as good
     as bm3d, so this is not recommended on clean, high quality sources.
 
-    The `noisy` parameter helps preserve more detail on high-quality but grainy sources,
-    but is slower.
+    The `noisy` parameter did help preserve more detail on high-quality but grainy sources,
+    but is slower. Currently it is deprecated, as the presets in `vsdenoise` changed,
+    but it may be un-deprecated in the future.
     """
     # TODO: Do we need to tweak anything for the `noisy` param?
     blksize = select_block_size(clip)
