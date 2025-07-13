@@ -18,6 +18,7 @@ def hqbm3d(
     """
     High-quality presets for motion compensated denoising.
     Uses BM3D for luma and nl_means for chroma.
+    This is a good denoiser for preserving detail on high-quality sources.
 
     Sane strength values will typically be below 1.0.
     """
@@ -48,12 +49,12 @@ def mc_dfttest(
     """
     A motion-compensated denoiser using DFTTEST.
     Even at the default `thSAD` of 75, it works well at eliminating noise.
-    Turn it up to 150 if you really need to nuke something.
-    It does an *okay* job at preserving details, but not nearly as good
-    as bm3d, so this is not recommended on clean, high quality sources.
+    Turn it up to 150 or more if you really need to nuke something.
+    It does a decent job at preserving details, but not nearly as good
+    as bm3d, so this is not recommended on clean, high-quality sources.
 
-    The `noisy` parameter did help preserve more detail on high-quality but grainy sources,
-    but is slower. Currently it is deprecated, as the presets in `vsdenoise` changed,
+    The `noisy` parameter did help preserve more detail on high-quality but grainy sources.
+    Currently it is deprecated, as the presets in `vsdenoise` changed,
     but it may be un-deprecated in the future.
     """
     # TODO: Do we need to tweak anything for the `noisy` param?
