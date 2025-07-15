@@ -11,7 +11,7 @@ from vskernels import (
     ScalerLike,
     Spline36,
 )
-from vsscale import SSIM, ArtCNN, GenericScaler
+from vsscale import ArtCNN, GenericScaler
 from vstools import check_variable_format, inject_self, is_gpu_available, join, vs
 
 __all__ = [
@@ -53,18 +53,14 @@ def good_resize(
 
     is_upscale = clip.width < width or clip.height < height
     chroma_scaler = Spline36()
-    if anime:
-        if is_upscale:
-            if gpu:
-                luma_scaler = ArtCNN()
-            else:
-                luma_scaler = NNEDI3(scaler=Hermite(sigmoid=True))
-        else:
-            luma_scaler = Hermite(sigmoid=True)
+
+    # We've ended up where the only special case is anime + upscale + GPU enabled
+    if anime and is_upscale and gpu:
+        luma_scaler = ArtCNN(scaler=Hermite(sigmoid=True))
     elif is_upscale:
-        luma_scaler = NNEDI3(scaler=SSIM())
+        luma_scaler = NNEDI3(scaler=Hermite(sigmoid=True))
     else:
-        luma_scaler = SSIM()
+        luma_scaler = Hermite(sigmoid=True)
 
     return HybridScaler(luma_scaler, chroma_scaler).scale(
         clip, width, height, shift=shift

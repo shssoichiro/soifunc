@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.11.2
+
+- Replace SSIM scaler with Hermite. SSIM scaler has had numerous bugs and it's not worth messing with anymore.
+
 ## Version 0.11.1
 
 - Change the default ML runtime, since vs-mlrt on AUR doesn't provide TRT_RTX and I don't feel like figuring out how to add it
