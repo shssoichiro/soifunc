@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.11.3
+
+- Use GPU backend selection logic from vs-jetpack
+
 ## Version 0.11.2
 
 - Replace SSIM scaler with Hermite. SSIM scaler has had numerous bugs and it's not worth messing with anymore.

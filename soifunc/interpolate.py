@@ -4,6 +4,7 @@ import platform
 from typing import TYPE_CHECKING
 
 import vstools
+from vsscale import autoselect_backend
 from vstools import vs
 
 if TYPE_CHECKING:
@@ -40,15 +41,7 @@ def rate_doubler(
         model=vsmlrt.RIFEModel.v4_25_heavy,
         # Why these defaults? Because running ML stuff on AMD on Windows sucks hard.
         # Trial and error led me to finally find that ORT_DML works.
-        backend=(
-            backend
-            if backend
-            else (
-                vsmlrt.Backend.ORT_DML()
-                if platform.system() == "Windows"
-                else vsmlrt.Backend.TRT()
-            )
-        ),
+        backend=(backend if backend else autoselect_backend()),
     )
     # TODO: Handle other chroma samplings
     clip = clip.resize.Bicubic(
@@ -98,15 +91,7 @@ def decimation_fixer(
     doubled = vsmlrt.RIFE(
         clip,
         model=vsmlrt.RIFEModel.v4_25_heavy,
-        backend=(
-            backend
-            if backend
-            else (
-                vsmlrt.Backend.ORT_DML()
-                if platform.system() == "Windows"
-                else vsmlrt.Backend.TRT()
-            )
-        ),
+        backend=(backend if backend else autoselect_backend()),
     )
 
     out_clip = None
