@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.12.0
+
+- [Breaking] Update for vs-jetpack 0.7, this required removing the `HybridScaler` class (well, probably not required, but it was the easiest way to accomplish fixing `good_resize`)
+
 ## Version 0.11.3
 
 - Use GPU backend selection logic from vs-jetpack
