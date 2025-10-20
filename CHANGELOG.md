@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.13.0 (unreleased)
+
+- [Breaking] Remove the deprecated `noisy` parameter from `mc_dfttest`
+- [Feature] Make `tr` parameter configurable for denoisers
+
 ## Version 0.12.0
 
 - [Breaking] Update for vs-jetpack 0.7, this required removing the `HybridScaler` class (well, probably not required, but it was the easiest way to accomplish fixing `good_resize`)

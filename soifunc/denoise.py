@@ -11,9 +11,10 @@ __all__ = ["MCDenoise", "magic_denoise", "hqbm3d", "mc_dfttest"]
 
 def hqbm3d(
     clip: vs.VideoNode,
-    luma_str: float = 0.45,
+    luma_str: float = 0.5,
     chroma_str: float = 0.4,
     profile: bm3d.Profile = bm3d.Profile.FAST,
+    tr: int = 1,
 ) -> vs.VideoNode:
     """
     High-quality presets for motion compensated denoising.
@@ -39,12 +40,14 @@ def hqbm3d(
         ),
         planes=None,
     )
-    out = bm3d(clip, sigma=luma_str, tr=1, ref=mv, profile=profile, planes=0)
-    return vsdenoise.nl_means(out, h=chroma_str, tr=1, ref=mv, planes=[1, 2])
+    out = bm3d(clip, sigma=luma_str, tr=tr, ref=mv, profile=profile, planes=0)
+    return vsdenoise.nl_means(out, h=chroma_str, tr=tr, ref=mv, planes=[1, 2])
 
 
 def mc_dfttest(
-    clip: vs.VideoNode, thSAD: int = 75, noisy: bool = False
+    clip: vs.VideoNode,
+    thSAD: int = 75,
+    tr: int = 2,
 ) -> vs.VideoNode:
     """
     A motion-compensated denoiser using DFTTEST.
@@ -52,19 +55,14 @@ def mc_dfttest(
     Turn it up to 150 or more if you really need to nuke something.
     It does a decent job at preserving details, but not nearly as good
     as bm3d, so this is not recommended on clean, high-quality sources.
-
-    The `noisy` parameter did help preserve more detail on high-quality but grainy sources.
-    Currently it is deprecated, as the presets in `vsdenoise` changed,
-    but it may be un-deprecated in the future.
     """
-    # TODO: Do we need to tweak anything for the `noisy` param?
     blksize = select_block_size(clip)
     return mc_degrain(
         clip,
         prefilter=vsdenoise.Prefilter.DFTTEST,
         preset=vsdenoise.MVToolsPreset.HQ_SAD,
         thsad=thSAD,
-        tr=2,
+        tr=tr,
         refine=3 if blksize > 16 else 2,
         blksize=blksize,
     )
