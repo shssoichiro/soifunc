@@ -4,6 +4,8 @@
 
 - [Breaking] Remove the deprecated `noisy` parameter from `mc_dfttest`
 - [Feature] Make `tr` parameter configurable for denoisers
+- [Feature] Add `replace_dupes` function to interpolate duplicate frames with RIFE
+- Various code cleanup
 
 ## Version 0.12.0
 
