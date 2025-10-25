@@ -25,6 +25,7 @@ def rate_doubler(
 
     width = clip.width
     height = clip.height
+    format = clip.format
     matrix = vstools.Matrix.from_video(clip)
     transfer = vstools.Transfer.from_video(clip)
     primaries = vstools.Primaries.from_video(clip)
@@ -44,7 +45,7 @@ def rate_doubler(
     )
     # TODO: Handle other chroma samplings
     clip = clip.resize.Bicubic(
-        format=vs.YUV420P16,
+        format=format,
         width=width,
         height=height,
         matrix=matrix,
@@ -73,6 +74,7 @@ def replace_dupes(
     # Store original properties
     width = clip.width
     height = clip.height
+    format = clip.format
     matrix = vstools.Matrix.from_video(clip)
     transfer = vstools.Transfer.from_video(clip)
     primaries = vstools.Primaries.from_video(clip)
@@ -98,7 +100,7 @@ def replace_dupes(
 
     # Convert interpolated frames back to original format
     interpolated = interpolated.resize.Bicubic(
-        format=vs.YUV420P16,
+        format=format,
         width=width,
         height=height,
         matrix=matrix,
@@ -187,6 +189,7 @@ def decimation_fixer(
     width = clip.width
     height = clip.height
     fps = clip.fps
+    format = clip.format
     input_cycle = cycle - 1
     matrix = vstools.Matrix.from_video(clip)
     transfer = vstools.Transfer.from_video(clip)
@@ -224,9 +227,8 @@ def decimation_fixer(
         fpsnum=fps.numerator * cycle // input_cycle, fpsden=fps.denominator
     )
 
-    # TODO: Handle other chroma samplings
     out_clip = out_clip.resize.Bicubic(
-        format=vs.YUV420P16,
+        format=format,
         width=width,
         height=height,
         matrix=matrix,
