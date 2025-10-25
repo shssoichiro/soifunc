@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from vsaa.deinterlacers import NNEDI3
-from vskernels import (
-    Hermite,
-    Spline36,
-)
+from vskernels import Hermite, LeftShift, Spline36, TopShift
 from vsscale import ArtCNN
-from vstools import check_variable_format, is_gpu_available, join, vs
+from vstools import (
+    VariableFormatError,
+    check_variable_format,
+    is_gpu_available,
+    join,
+    vs,
+)
 
 __all__ = [
     "good_resize",
@@ -17,7 +20,7 @@ def good_resize(
     clip: vs.VideoNode,
     width: int,
     height: int,
-    shift: tuple[float, float] = (0, 0),
+    shift: tuple[TopShift | list[TopShift], LeftShift | list[LeftShift]] = (0, 0),
     gpu: bool | None = None,
     anime: bool = False,
 ) -> vs.VideoNode:
@@ -55,10 +58,12 @@ def good_resize(
     else:
         luma_scaler = Hermite(sigmoid=True)
 
-    assert check_variable_format(clip, "good_resize")
+    if not check_variable_format(clip, "good_resize"):
+        raise VariableFormatError("Invalid clip format for good_resize")
 
     luma = luma_scaler.scale(clip, width, height, shift)
 
+    # Grayscale doesn't need chroma processing
     if clip.format.num_planes == 1:
         return luma
 
